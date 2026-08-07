@@ -7,7 +7,7 @@ struct KeychainTokenStoreTests {
     // Eigener Service-Name pro Testlauf, damit Tests sich nicht gegenseitig
     // oder eine echte installierte App stören.
     private func makeStore() -> KeychainTokenStore {
-        KeychainTokenStore(service: "com.manuelweiser.MAMenubar.tests.\(UUID().uuidString)")
+        KeychainTokenStore(service: "org.fire-devils.MAMenubar.tests.\(UUID().uuidString)")
     }
 
     @Test("save/load/delete-Roundtrip")

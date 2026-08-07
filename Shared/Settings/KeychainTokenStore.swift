@@ -18,7 +18,7 @@ public struct KeychainTokenStore: Sendable {
     private let service: String
     private let account = "mass-token"
 
-    public init(service: String = "com.manuelweiser.MAMenubar") {
+    public init(service: String = "org.fire-devils.MAMenubar") {
         self.service = service
     }
 

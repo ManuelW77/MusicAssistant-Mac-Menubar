@@ -57,6 +57,11 @@ struct MenuBarContentView: View {
 
             HStack {
                 Button("Einstellungen…") {
+                    // Als LSUIElement-App hat der Prozess standardmäßig keine
+                    // Fokus-/Vordergrund-Rechte; kurzzeitig auf .regular
+                    // umschalten, damit das Fenster wirklich key/aktiv wird
+                    // (sonst landet es unfokussiert hinter anderen Fenstern).
+                    NSApp.setActivationPolicy(.regular)
                     openSettings()
                     NSApp.activate(ignoringOtherApps: true)
                 }

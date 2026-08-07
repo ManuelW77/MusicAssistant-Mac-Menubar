@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import MAMenubarLib
 
@@ -27,6 +28,11 @@ struct SettingsView: View {
         .frame(width: 440, height: 340)
         .onAppear {
             serverURLText = appState.settings.serverBaseURLString
+        }
+        .onDisappear {
+            // Wieder zur reinen Menüleisten-App ohne Dock-Icon zurückschalten,
+            // sobald das Settings-Fenster geschlossen wird (siehe MenuBarContentView).
+            NSApp.setActivationPolicy(.accessory)
         }
     }
 

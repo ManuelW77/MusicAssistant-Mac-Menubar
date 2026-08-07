@@ -27,11 +27,42 @@ public enum MassEndpoint {
     }
 
     /// Löst eine vom Server gelieferte (ggf. relative) Bild-URL gegen die Server-Basis-URL auf.
+    ///
+    /// MA gibt für den `/imageproxy`-Pfad mitunter die intern konfigurierte
+    /// LAN-Adresse des Servers zurück (z.B. `192.168.x.x`) statt der öffentlich
+    /// erreichbaren Basis-URL hinter einem Reverse-Proxy. macOS' Local-Network-
+    /// Privacy blockt Zugriffe auf solche privaten Adressen ohnehin, daher wird
+    /// der Host in diesem Fall durch die konfigurierte Server-Basis-URL ersetzt
+    /// (Pfad + Query bleiben erhalten). Absolute URLs zu echten externen Hosts
+    /// (z.B. Provider-CDN-Bilder) bleiben unverändert.
     public static func resolveImageURL(_ raw: String?, serverBaseURL: URL) -> URL? {
         guard let raw, !raw.isEmpty else { return nil }
-        if let absolute = URL(string: raw), absolute.scheme != nil {
-            return absolute
+
+        guard let parsed = URL(string: raw), let host = parsed.host, parsed.scheme != nil else {
+            return URL(string: raw, relativeTo: serverBaseURL)
         }
-        return URL(string: raw, relativeTo: serverBaseURL)
+
+        guard isPrivateOrLocalHost(host) else {
+            return parsed
+        }
+
+        guard var components = URLComponents(url: serverBaseURL, resolvingAgainstBaseURL: false) else {
+            return parsed
+        }
+        components.path = parsed.path
+        components.query = parsed.query
+        return components.url ?? parsed
+    }
+
+    private static func isPrivateOrLocalHost(_ host: String) -> Bool {
+        if host == "localhost" || host.hasSuffix(".local") { return true }
+        let octets = host.split(separator: ".").compactMap { UInt8($0) }
+        guard octets.count == 4 else { return false }
+        switch octets[0] {
+        case 10, 127: return true
+        case 172: return (16...31).contains(octets[1])
+        case 192: return octets[1] == 168
+        default: return false
+        }
     }
 }
