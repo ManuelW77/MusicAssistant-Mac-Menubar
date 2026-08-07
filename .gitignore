@@ -1,0 +1,22 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode (falls das Package später in Xcode geöffnet wird)
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+*.xcuserstate
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+.claude/
+
+# Lokale, nicht zu versionierende Notizen/Logs
+*.log
