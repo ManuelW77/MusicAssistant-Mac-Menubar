@@ -1,0 +1,2 @@
+# MusicAssistant-Mac-Menubar
+
