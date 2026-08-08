@@ -84,7 +84,7 @@ make release BUMP=minor   # Minor-Bump
 make release BUMP=v2.0.0  # explizite Version
 ```
 
-`scripts/release.sh` bricht ab, wenn man sich nicht auf `main` befindet oder der Working Tree nicht sauber ist, ermittelt die nächste Version aus dem letzten `vX.Y.Z`-Tag, fragt vor dem Push nochmal nach und pusht dann `main` + den neuen Tag zu beiden Remotes — der Tag-Push zu GitHub löst den Sign-&-Notarize-Workflow aus.
+`scripts/release.sh` bricht ab, wenn man sich nicht auf `main` befindet oder der Working Tree nicht sauber ist, ermittelt die nächste Version aus dem letzten `vX.Y.Z`-Tag, fragt vor dem Push nochmal nach und pusht dann `main` + den neuen Tag zu beiden Remotes — der Tag-Push zu GitHub löst den Sign-&-Notarize-Workflow aus. Beim Aufruf ganz ohne Argument (`make release`) fragt es zusätzlich interaktiv, ob die Version statt des automatischen Patch-Bumps manuell gesetzt werden soll; bei explizitem `BUMP=...` entfällt diese Rückfrage.
 
 Dafür müssen einmalig folgende Repo-Secrets gesetzt werden (`gh secret set NAME --repo ManuelW77/MusicAssistant-Mac-Menubar -b"…"`, selbst ausführen — dafür wird das Zertifikat/die Credentials nirgendwo sonst eingegeben):
 
