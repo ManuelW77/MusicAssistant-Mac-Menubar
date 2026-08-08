@@ -12,6 +12,7 @@ struct JSONValueTests {
             "name": "Wohnzimmer",
             "available": true,
             "playback_state": "playing",
+            "volume_level": 42,
             "current_media": {
                 "uri": "spotify://track/1",
                 "title": "Testsong",
@@ -29,6 +30,7 @@ struct JSONValueTests {
         #expect(player.playerId == "player-1")
         #expect(player.name == "Wohnzimmer")
         #expect(player.playbackState == .playing)
+        #expect(player.volumeLevel == 42)
         #expect(player.currentMedia?.title == "Testsong")
     }
 

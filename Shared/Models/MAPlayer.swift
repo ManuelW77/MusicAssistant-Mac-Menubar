@@ -10,6 +10,7 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
     public var available: Bool?
     public var playbackState: PlaybackState?
     public var currentMedia: PlayerMedia?
+    public var volumeLevel: Int?
 
     public var id: String { playerId }
 
@@ -18,13 +19,15 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
         name: String,
         available: Bool? = nil,
         playbackState: PlaybackState? = nil,
-        currentMedia: PlayerMedia? = nil
+        currentMedia: PlayerMedia? = nil,
+        volumeLevel: Int? = nil
     ) {
         self.playerId = playerId
         self.name = name
         self.available = available
         self.playbackState = playbackState
         self.currentMedia = currentMedia
+        self.volumeLevel = volumeLevel
     }
 }
 

@@ -22,3 +22,12 @@ public struct PlayerIDArgs: Encodable, Sendable {
     public let playerId: String
     public init(playerId: String) { self.playerId = playerId }
 }
+
+public struct VolumeArgs: Encodable, Sendable {
+    public let playerId: String
+    public let volumeLevel: Int
+    public init(playerId: String, volumeLevel: Int) {
+        self.playerId = playerId
+        self.volumeLevel = volumeLevel
+    }
+}

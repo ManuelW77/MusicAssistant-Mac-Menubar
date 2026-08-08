@@ -28,7 +28,8 @@ struct VerifyConnectionMain {
             print("\n\(players.count) Player gefunden:\n")
             for player in players {
                 let state = player.playbackState?.rawValue ?? "?"
-                print("- \(player.name) [\(player.playerId)] state=\(state) available=\(player.available.map(String.init) ?? "?")")
+                let volume = player.volumeLevel.map(String.init) ?? "?"
+                print("- \(player.name) [\(player.playerId)] state=\(state) volume=\(volume) available=\(player.available.map(String.init) ?? "?")")
                 if let media = player.currentMedia {
                     print("    now playing: \(media.title ?? "-") — \(media.artist ?? "-")")
                     if let imageUrl = media.imageUrl {

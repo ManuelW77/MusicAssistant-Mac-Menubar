@@ -162,6 +162,14 @@ public final class AppState {
         }
     }
 
+    public func setVolume(_ level: Int) {
+        guard let client, let playerId = selectedPlayerID else { return }
+        let clamped = min(max(level, 0), 100)
+        Task {
+            try? await client.sendRaw("players/cmd/volume_set", args: VolumeArgs(playerId: playerId, volumeLevel: clamped))
+        }
+    }
+
     /// Für den "Verbindung testen"-Button im Settings-Dialog: baut eine eigene,
     /// kurzlebige Verbindung auf, ohne den laufenden Client zu beeinflussen.
     public func testConnection(baseURL: URL, token: String) async throws -> [MAPlayer] {

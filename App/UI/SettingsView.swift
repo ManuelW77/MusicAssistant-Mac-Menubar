@@ -52,6 +52,7 @@ struct SettingsView: View {
                     Button("Verbindung testen") {
                         testConnection()
                     }
+                    .buttonStyle(.glass)
                     .disabled(serverURLText.isEmpty || tokenText.isEmpty || testState == .testing)
 
                     if testState == .testing {
@@ -65,6 +66,7 @@ struct SettingsView: View {
                 Button("Speichern") {
                     save()
                 }
+                .buttonStyle(.glassProminent)
                 .disabled(serverURLText.isEmpty || tokenText.isEmpty)
             }
         }
@@ -132,6 +134,7 @@ struct SettingsView: View {
             Button("Player neu laden") {
                 Task { await appState.reloadPlayers() }
             }
+            .buttonStyle(.glass)
             .padding(.top, 4)
         }
         .padding()

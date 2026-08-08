@@ -1,10 +1,8 @@
-import AppKit
 import SwiftUI
 import MAMenubarLib
 
 struct MenuBarContentView: View {
     @Environment(AppState.self) private var appState
-    @Environment(\.openSettings) private var openSettings
 
     private var resolvedImageURL: URL? {
         guard let raw = appState.selectedPlayer?.currentMedia?.imageUrl,
@@ -18,7 +16,8 @@ struct MenuBarContentView: View {
         VStack(spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(.quaternary)
+                    .fill(.clear)
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 10))
                 AsyncImage(url: resolvedImageURL) { phase in
                     if let image = phase.image {
                         image.resizable().aspectRatio(contentMode: .fill)
@@ -49,32 +48,13 @@ struct MenuBarContentView: View {
                 onNext: appState.next
             )
 
+            VolumeSliderView(volumeLevel: appState.selectedPlayer?.volumeLevel) { level in
+                appState.setVolume(level)
+            }
+
             PlayerPickerView(players: appState.availablePlayers, selectedPlayerID: $appState.selectedPlayerID)
 
             ConnectionStatusView(status: appState.connectionStatus)
-
-            Divider()
-
-            HStack {
-                Button("Einstellungen…") {
-                    // Als LSUIElement-App hat der Prozess standardmäßig keine
-                    // Fokus-/Vordergrund-Rechte; kurzzeitig auf .regular
-                    // umschalten, damit das Fenster wirklich key/aktiv wird
-                    // (sonst landet es unfokussiert hinter anderen Fenstern).
-                    NSApp.setActivationPolicy(.regular)
-                    openSettings()
-                    NSApp.activate(ignoringOtherApps: true)
-                }
-                .buttonStyle(.plain)
-
-                Spacer()
-
-                Button("Beenden") {
-                    NSApp.terminate(nil)
-                }
-                .buttonStyle(.plain)
-            }
-            .font(.caption)
         }
         .padding(16)
         .frame(width: 220)
