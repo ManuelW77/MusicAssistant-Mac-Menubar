@@ -39,6 +39,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         appState.start()
         setupStatusItem()
+
+        // Nach Mac-Schlaf ist die TCP-Verbindung oft lautlos tot (kein Close-
+        // Frame), ohne aktiven Traffic bemerkt receive() das ggf. sehr lange
+        // nicht — daher hier proaktiv beim Aufwachen neu verbinden, statt
+        // darauf zu warten, dass ein Button-Klick den toten Socket aufdeckt.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.appState.restart()
+        }
     }
 
     private func setupStatusItem() {
@@ -80,6 +92,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Settings — das würde bei jedem Icon-Klick kurz ein Dock-Icon
             // aufblitzen lassen.
             popover.contentViewController?.view.window?.makeKey()
+            // Leichtgewichtiger Sicherheitsnetz-Refresh beim Öffnen (z.B. für
+            // verpasste Events) — no-op, falls gerade kein Client verbunden ist.
+            Task { await appState.reloadPlayers() }
         }
     }
 
