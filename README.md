@@ -65,6 +65,8 @@ mv "dist/MA Menubar.app" /Applications/
 
 Das Repo wird zusätzlich zu Gitea (`origin`) nach GitHub gespiegelt (`github`-Remote, https://github.com/ManuelW77/MusicAssistant-Mac-Menubar). Ein Push eines `vX.Y.Z`-Tags dorthin (oder ein manueller Trigger) löst `.github/workflows/release.yml` aus: baut per `make app`, signiert mit einem **Developer-ID-Application**-Zertifikat, notarisiert bei Apple (`notarytool`) und hängt das gestapelte, gezippte `.app`-Bundle an eine neue GitHub Release — Gatekeeper zeigt auf fremden Macs dann keine Warnung mehr.
 
+Versionierung folgt [SemVer](https://semver.org/), beginnend bei `v1.0.0`. Bei einem Tag-Push übernimmt der Workflow den Tag automatisch als `CFBundleShortVersionString` (Tag ohne führendes `v`) und die GitHub-Actions-Run-Nummer als `CFBundleVersion` (Build-Nummer) — `App/Info.plist` muss dafür nicht manuell angepasst werden.
+
 ```
 git tag v1.0.0
 git push github v1.0.0
