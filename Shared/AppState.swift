@@ -43,16 +43,14 @@ public final class AppState {
     }
 
     public let settings: AppSettingsStore
-    private let tokenStore: KeychainTokenStore
     private var client: MassWebSocketClient?
     private var supervisorTask: Task<Void, Never>?
     private var reconnectAttempt = 0
 
     private static let backoffSchedule: [Double] = [1, 2, 4, 8, 16, 30]
 
-    public init(settings: AppSettingsStore = AppSettingsStore(), tokenStore: KeychainTokenStore = KeychainTokenStore()) {
+    public init(settings: AppSettingsStore = AppSettingsStore()) {
         self.settings = settings
-        self.tokenStore = tokenStore
         self.selectedPlayerID = settings.lastSelectedPlayerID
     }
 
@@ -80,7 +78,7 @@ public final class AppState {
 
     private func runSupervised() async {
         while !Task.isCancelled {
-            guard let baseURL = settings.serverBaseURL, let token = try? tokenStore.load() else {
+            guard let baseURL = settings.serverBaseURL, let token = settings.accessToken else {
                 connectionStatus = .disconnected
                 try? await Task.sleep(for: .seconds(5))
                 continue
@@ -171,11 +169,12 @@ public final class AppState {
         return try await testClient.send("players/all", args: NoArgs())
     }
 
-    /// Speichert Server-URL + Token dauerhaft (URL in UserDefaults, Token im
-    /// Keychain) und baut die laufende Verbindung mit den neuen Werten neu auf.
-    public func saveCredentials(baseURLString: String, token: String) throws {
+    /// Speichert Server-URL + Token dauerhaft (beides in UserDefaults, siehe
+    /// AppSettingsStore für die Begründung gegen Keychain) und baut die
+    /// laufende Verbindung mit den neuen Werten neu auf.
+    public func saveCredentials(baseURLString: String, token: String) {
         settings.serverBaseURLString = baseURLString
-        try tokenStore.save(token)
+        settings.accessToken = token
         restart()
     }
 

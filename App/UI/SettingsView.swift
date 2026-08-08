@@ -47,6 +47,7 @@ struct SettingsView: View {
         .frame(width: 440, height: 420)
         .onAppear {
             serverURLText = appState.settings.serverBaseURLString
+            tokenText = appState.settings.accessToken ?? ""
             launchAtLoginEnabled = LaunchAtLogin.isEnabled
             // Als LSUIElement-App hat der Prozess standardmäßig keine Fokus-/
             // Vordergrund-Rechte; kurzzeitig auf .regular umschalten, damit
@@ -139,7 +140,7 @@ struct SettingsView: View {
                 TextField("Server-URL", text: $serverURLText, prompt: Text("https://music.example.org"))
                 SecureField("Token", text: $tokenText, prompt: Text("Long-Lived Access Token"))
             } footer: {
-                Text("Der Token wird in der Music-Assistant-Web-UI unter Profil → Access Tokens erzeugt und ausschließlich in der macOS-Keychain gespeichert.")
+                Text("Der Token wird in der Music-Assistant-Web-UI unter Profil → Access Tokens erzeugt und lokal in den App-Einstellungen gespeichert.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -255,11 +256,7 @@ struct SettingsView: View {
     }
 
     private func save() {
-        do {
-            try appState.saveCredentials(baseURLString: serverURLText, token: tokenText)
-        } catch {
-            testState = .failure("Speichern fehlgeschlagen: \(error)")
-        }
+        appState.saveCredentials(baseURLString: serverURLText, token: tokenText)
     }
 
     private func checkForUpdates() async {

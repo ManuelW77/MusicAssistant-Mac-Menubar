@@ -21,7 +21,7 @@ Kleines natives macOS-Menüleisten-Tool für [Music Assistant](https://www.music
 
 ```
 Shared/            SPM-Library "MAMenubarLib": WebSocket-Client, Datenmodelle,
-                    Settings-/Keychain-Speicher, AppState-Orchestrator
+                    Settings-Speicher, AppState-Orchestrator
 App/                SwiftUI-App (MenuBarExtra-Popover + Settings-Dialog)
 Tools/VerifyConnection/  CLI zur Protokollverifikation gegen einen echten Server
 MAMenubarTests/     Unit-Tests für Shared/
@@ -103,7 +103,7 @@ Beim ersten Start über Rechtsklick auf das Menüleisten-Icon → „Einstellung
 2. **Tab „Server"**: Server-Basis-URL (z.B. `https://music.example.org`) und Access-Token eintragen, mit „Verbindung testen" prüfen, dann „Speichern".
 3. **Tab „Player"**: Aus den vom Server gemeldeten Playern die gewünschten für den Popover-Picker aktivieren.
 
-Der Access-Token wird ausschließlich in der macOS-Keychain gespeichert (Service `org.fire-devils.MAMenubar`), nie im Klartext. Server-URL und Player-Whitelist liegen in `UserDefaults`.
+Server-URL, Access-Token und Player-Whitelist liegen in `UserDefaults` (bewusst nicht in der Keychain — der dafür beim allerersten Speichern unvermeidbare "App möchte auf deinen Schlüsselbund zugreifen"-Dialog wurde zugunsten einer reibungslosen Ersteinrichtung vermieden; der Token liegt dadurch unverschlüsselt auf der Platte).
 
 ## Protokollverifikation gegen einen echten Server
 
@@ -119,4 +119,4 @@ make verify URL=https://music.example.org TOKEN=<dein-token>
 make test
 ```
 
-Deckt u.a. das JSON-Decoding (inkl. Partial-Response-Handling der MA-API), die Bild-URL-Auflösung (`MassEndpoint`, inkl. Umschreiben privater LAN-Adressen auf die öffentliche Server-URL) sowie Settings-/Keychain-Roundtrips ab.
+Deckt u.a. das JSON-Decoding (inkl. Partial-Response-Handling der MA-API), die Bild-URL-Auflösung (`MassEndpoint`, inkl. Umschreiben privater LAN-Adressen auf die öffentliche Server-URL) sowie Settings-Roundtrips ab.

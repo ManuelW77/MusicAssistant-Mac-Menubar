@@ -18,14 +18,22 @@ struct AppSettingsStoreTests {
 
         let store = AppSettingsStore(defaults: defaults)
         store.serverBaseURLString = "https://music.fire-devils.org"
+        store.accessToken = "secret-token"
         store.allowedPlayerIDs = ["player-1", "player-2"]
         store.lastSelectedPlayerID = "player-1"
 
         let reloaded = AppSettingsStore(defaults: defaults)
         #expect(reloaded.serverBaseURLString == "https://music.fire-devils.org")
+        #expect(reloaded.accessToken == "secret-token")
         #expect(reloaded.allowedPlayerIDs == ["player-1", "player-2"])
         #expect(reloaded.lastSelectedPlayerID == "player-1")
         #expect(reloaded.serverBaseURL == URL(string: "https://music.fire-devils.org"))
+    }
+
+    @Test("fehlender Token ergibt nil")
+    func missingTokenIsNil() {
+        let store = makeStore()
+        #expect(store.accessToken == nil)
     }
 
     @Test("leere Server-URL ergibt keine gültige URL")
