@@ -51,6 +51,16 @@ struct VerifyConnectionMain {
                 print("\nLade Media-Item-Info für \(uri)…")
                 let item: MediaItemInfo = try await client.send("music/item_by_uri", args: ItemByURIArgs(uri: uri))
                 print("item_id=\(item.itemId) provider=\(item.provider) media_type=\(item.mediaType) favorite=\(item.favorite)")
+
+                print("\nLade ähnliche Titel…")
+                let similar: [SimilarTrackInfo] = try await client.send(
+                    "music/tracks/similar_tracks",
+                    args: SimilarTracksArgs(itemId: item.itemId, providerInstanceIdOrDomain: item.provider)
+                )
+                print("\(similar.count) ähnliche(r) Titel gefunden:\n")
+                for track in similar {
+                    print("- uri=\(track.uri ?? "-")")
+                }
             } else {
                 print("\nKein Player mit laufender Wiedergabe für den item_by_uri-Test gefunden.")
             }

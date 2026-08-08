@@ -267,4 +267,40 @@ public final class AppState {
             return true
         }
     }
+
+    public enum RadioError: Error, CustomStringConvertible, Sendable {
+        case noClient
+        case noCurrentTrack
+
+        public var description: String {
+            switch self {
+            case .noClient: return "Nicht mit Music Assistant verbunden"
+            case .noCurrentTrack: return "Kein Titel wird aktuell abgespielt"
+            }
+        }
+    }
+
+    /// Ersetzt die Queue des aktuellen Players durch den aktuell laufenden Titel
+    /// gefolgt von ähnlichen Titeln (music/tracks/similar_tracks) und startet
+    /// sie sofort. Bewusst nicht über eine `radio_playlist://`-URI gelöst — die
+    /// scheiterte am echten Server mit "radio_playlist is not available", obwohl
+    /// "Radio starten" in der MA-Web-UI für denselben Titel funktioniert hat;
+    /// similar_tracks ist der providerunabhängige Mechanismus, den der
+    /// radio_playlist-Provider selbst intern nutzt, also der robustere Weg.
+    public func startRadio() async throws {
+        guard let client else { throw RadioError.noClient }
+        guard let playerId = selectedPlayerID, let uri = selectedPlayer?.currentMedia?.uri else {
+            throw RadioError.noCurrentTrack
+        }
+        let item: MediaItemInfo = try await client.send("music/item_by_uri", args: ItemByURIArgs(uri: uri))
+        let similar: [SimilarTrackInfo] = try await client.send(
+            "music/tracks/similar_tracks",
+            args: SimilarTracksArgs(itemId: item.itemId, providerInstanceIdOrDomain: item.provider)
+        )
+        let media = [uri] + similar.compactMap(\.uri).filter { $0 != uri }
+        try await client.sendRaw(
+            "player_queues/play_media",
+            args: PlayMediaArgs(queueId: playerId, media: media, option: "replace")
+        )
+    }
 }

@@ -45,6 +45,8 @@ struct MenuBarContentView: View {
             HStack(spacing: 8) {
                 FavoriteButtonView()
 
+                RadioButtonView()
+
                 Button {
                     showAddToPlaylist = true
                 } label: {

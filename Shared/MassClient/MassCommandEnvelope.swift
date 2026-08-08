@@ -66,3 +66,23 @@ public struct RemoveFavoriteArgs: Encodable, Sendable {
         self.libraryItemId = libraryItemId
     }
 }
+
+public struct PlayMediaArgs: Encodable, Sendable {
+    public let queueId: String
+    public let media: [String]
+    public let option: String
+    public init(queueId: String, media: [String], option: String) {
+        self.queueId = queueId
+        self.media = media
+        self.option = option
+    }
+}
+
+public struct SimilarTracksArgs: Encodable, Sendable {
+    public let itemId: String
+    public let providerInstanceIdOrDomain: String
+    public init(itemId: String, providerInstanceIdOrDomain: String) {
+        self.itemId = itemId
+        self.providerInstanceIdOrDomain = providerInstanceIdOrDomain
+    }
+}
