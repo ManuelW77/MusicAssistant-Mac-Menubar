@@ -44,5 +44,8 @@ app:
 	for bundle in .build/release/*.bundle; do \
 		[ -d "$$bundle" ] && cp -R "$$bundle" "$(APP_BUNDLE)/Contents/Resources/"; \
 	done
-	codesign --force --sign "$(SIGN_IDENTITY)" --entitlements App/MAMenubar.entitlements "$(APP_BUNDLE)"
+	# --options runtime (Hardened Runtime) + --timestamp (Secure Timestamp)
+	# sind Pflicht für Notarization, sonst lehnt Apple mit "does not have
+	# the hardened runtime enabled" ab.
+	codesign --force --options runtime --timestamp --sign "$(SIGN_IDENTITY)" --entitlements App/MAMenubar.entitlements "$(APP_BUNDLE)"
 	@echo "Fertig: $(APP_BUNDLE)"
