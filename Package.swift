@@ -21,10 +21,7 @@ let package = Package(
             name: "MAMenubar",
             dependencies: ["MAMenubarLib"],
             path: "App",
-            exclude: ["Info.plist", "MAMenubar.entitlements", "AppIcon.icns", "AppIcon.png"],
-            resources: [
-                .copy("MenubarIcon.png")
-            ],
+            exclude: ["Info.plist", "MAMenubar.entitlements", "AppIcon.icns", "AppIcon.png", "MenubarIcon.png"],
             linkerSettings: [
                 .unsafeFlags([
                     "-Xlinker", "-sectcreate",

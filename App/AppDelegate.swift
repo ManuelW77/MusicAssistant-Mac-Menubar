@@ -13,11 +13,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
 
+    // Bewusst kein SPM-Resource/Bundle.module: dessen generierter Accessor
+    // sucht das Resource-Bundle auf der Bundle-Wurzel (neben Contents/),
+    // aber codesign verweigert lose Inhalte genau dort ("unsealed contents
+    // present in the bundle root"). Stattdessen wie AppIcon.icns behandelt:
+    // App/MenubarIcon.png ist von der SPM-Quellerkennung ausgeschlossen
+    // (Package.swift `exclude:`), `make app` kopiert es nach
+    // Contents/Resources/ — dort findet Bundle.main es ganz normal. Für
+    // lokale Debug-Runs ohne echtes .app-Bundle (Xcode-Run/`make run`) gibt
+    // es einen Fallback direkt aus dem Source-Tree.
     private static let menuBarIcon: NSImage? = {
-        guard let url = Bundle.module.url(forResource: "MenubarIcon", withExtension: "png"),
-              let image = NSImage(contentsOf: url) else { return nil }
-        image.size = NSSize(width: 18, height: 18)
-        image.isTemplate = true
+        let image: NSImage?
+        if let url = Bundle.main.url(forResource: "MenubarIcon", withExtension: "png"),
+           let loaded = NSImage(contentsOf: url) {
+            image = loaded
+        } else {
+            let sourceDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            image = NSImage(contentsOf: sourceDir.appendingPathComponent("MenubarIcon.png"))
+        }
+        image?.size = NSSize(width: 18, height: 18)
+        image?.isTemplate = true
         return image
     }()
 

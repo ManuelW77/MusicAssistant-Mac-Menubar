@@ -39,14 +39,9 @@ app:
 	if [ -f App/AppIcon.icns ]; then \
 		cp App/AppIcon.icns "$(APP_BUNDLE)/Contents/Resources/AppIcon.icns"; \
 	fi
-	# SPM-Resource-Bundle (u.a. MenubarIcon.png, siehe Package.swift
-	# `resources:`) muss auf oberster Bundle-Ebene liegen (neben Contents/),
-	# NICHT in Contents/Resources/ — SPMs generierter Bundle.module-Accessor
-	# sucht unter Bundle.main.bundleURL, kennt Contents/Resources/ nicht.
-	# Sonst: "Fatal error: could not load resource bundle" beim Start.
-	for bundle in .build/release/*.bundle; do \
-		[ -d "$$bundle" ] && cp -R "$$bundle" "$(APP_BUNDLE)/"; \
-	done
+	if [ -f App/MenubarIcon.png ]; then \
+		cp App/MenubarIcon.png "$(APP_BUNDLE)/Contents/Resources/MenubarIcon.png"; \
+	fi
 	# --options runtime (Hardened Runtime) + --timestamp (Secure Timestamp)
 	# sind Pflicht für Notarization, sonst lehnt Apple mit "does not have
 	# the hardened runtime enabled" ab.
