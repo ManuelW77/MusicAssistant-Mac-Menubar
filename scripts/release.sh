@@ -45,12 +45,18 @@ case "$BUMP" in
         PATCH=$((PATCH + 1))
         NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
         ;;
-    v[0-9]*.[0-9]*.[0-9]*)
-        NEW_VERSION="${BUMP#v}"
-        ;;
     *)
-        echo "Fehler: Unbekanntes Argument '$BUMP' (erwartet: major | minor | patch | vX.Y.Z)" >&2
-        exit 1
+        # Striktes, verankertes Regex-Match statt eines Glob-Patterns: ein
+        # Glob wie v[0-9]*.[0-9]*.[0-9]* matcht wegen der ungebremsten `*`
+        # so gut wie jeden String mit zwei Punkten, nicht nur echte
+        # Versionsnummern. BASH_REMATCH stellt sicher, dass NEW_VERSION
+        # ausschließlich aus den gematchten Ziffern besteht.
+        if [[ "$BUMP" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            NEW_VERSION="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+        else
+            echo "Fehler: Unbekanntes Argument '$BUMP' (erwartet: major | minor | patch | vX.Y.Z)" >&2
+            exit 1
+        fi
         ;;
 esac
 
