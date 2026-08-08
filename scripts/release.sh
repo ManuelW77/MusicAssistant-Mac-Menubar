@@ -6,9 +6,9 @@
 # aus (.github/workflows/release.yml).
 #
 # Verwendung:
-#   ./scripts/release.sh            # Patch-Bump (Standard), fragt interaktiv,
-#                                    # ob die Version stattdessen manuell
-#                                    # gesetzt werden soll
+#   ./scripts/release.sh            # zeigt die aktuelle Version, fragt dann
+#                                    # interaktiv nach major/minor/patch
+#                                    # (Standard bei leerer Eingabe: patch)
 #   ./scripts/release.sh minor      # Minor-Bump (keine Rückfrage)
 #   ./scripts/release.sh major      # Major-Bump (keine Rückfrage)
 #   ./scripts/release.sh v2.3.0     # explizite Version (keine Rückfrage)
@@ -33,18 +33,16 @@ LATEST_TAG="${LATEST_TAG:-v0.0.0}"
 LATEST_VERSION="${LATEST_TAG#v}"
 IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_VERSION"
 
-BUMP="${1:-patch}"
+BUMP="${1:-}"
 
 # Nur nachfragen, wenn das Script ganz ohne Argument aufgerufen wurde (der
 # übliche interaktive `make release`-Fall) — bei explizit übergebenem Bump-Typ
 # oder Version (z.B. aus einem Skript/CI) ist die Entscheidung schon getroffen,
 # da nicht erneut nachfragen.
-if [ "$#" -eq 0 ]; then
-    read -r -p "Versionsnummer manuell festlegen statt automatischem Patch-Bump? [y/N] " MANUAL_VERSION
-    if [ "$MANUAL_VERSION" = "y" ] || [ "$MANUAL_VERSION" = "Y" ]; then
-        read -r -p "Neue Version (X.Y.Z, ohne führendes 'v'): " MANUAL_INPUT
-        BUMP="v${MANUAL_INPUT}"
-    fi
+if [ -z "$BUMP" ]; then
+    echo "Aktuelle Version: $LATEST_TAG"
+    read -r -p "Version erhöhen um [major/minor/patch] (Standard: patch): " BUMP
+    BUMP="${BUMP:-patch}"
 fi
 
 case "$BUMP" in
