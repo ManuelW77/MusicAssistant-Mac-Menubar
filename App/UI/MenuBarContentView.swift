@@ -3,6 +3,7 @@ import MAMenubarLib
 
 struct MenuBarContentView: View {
     @Environment(AppState.self) private var appState
+    @State private var showAddToPlaylist = false
 
     private var resolvedImageURL: URL? {
         guard let raw = appState.selectedPlayer?.currentMedia?.imageUrl,
@@ -39,6 +40,19 @@ struct MenuBarContentView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+            }
+
+            Button {
+                showAddToPlaylist = true
+            } label: {
+                Label("Zu Playlist hinzufügen", systemImage: "text.badge.plus")
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(.glass)
+            .disabled(appState.selectedPlayer?.currentMedia == nil)
+            .popover(isPresented: $showAddToPlaylist) {
+                AddToPlaylistView()
+                    .environment(appState)
             }
 
             PlayerControlsView(

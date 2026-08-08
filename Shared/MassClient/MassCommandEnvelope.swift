@@ -31,3 +31,17 @@ public struct VolumeArgs: Encodable, Sendable {
         self.volumeLevel = volumeLevel
     }
 }
+
+public struct CreatePlaylistArgs: Encodable, Sendable {
+    public let name: String
+    public init(name: String) { self.name = name }
+}
+
+public struct AddPlaylistTracksArgs: Encodable, Sendable {
+    public let dbPlaylistId: String
+    public let uris: [String]
+    public init(dbPlaylistId: String, uris: [String]) {
+        self.dbPlaylistId = dbPlaylistId
+        self.uris = uris
+    }
+}

@@ -40,6 +40,13 @@ struct VerifyConnectionMain {
                 }
             }
 
+            print("\nLade Playlist-Liste…")
+            let playlists: [Playlist] = try await client.send("music/playlists/library_items", args: NoArgs())
+            print("\n\(playlists.count) Playlist(s) gefunden:\n")
+            for playlist in playlists {
+                print("- \(playlist.name) [item_id=\(playlist.itemId) provider=\(playlist.provider)] uri=\(playlist.uri ?? "-")")
+            }
+
             await client.disconnect()
         } catch {
             print("Fehler: \(error)")

@@ -26,6 +26,7 @@ public enum ConnectionStatus: Equatable, Sendable {
 public final class AppState {
     public private(set) var connectionStatus: ConnectionStatus = .disconnected
     public private(set) var players: [MAPlayer] = []
+    public private(set) var playlists: [Playlist] = []
 
     public var selectedPlayerID: String? {
         didSet {
@@ -182,5 +183,46 @@ public final class AppState {
     /// den "Player neu laden"-Button im Settings-Dialog).
     public func reloadPlayers() async {
         await refreshPlayers()
+    }
+
+    public enum PlaylistError: Error, CustomStringConvertible, Sendable {
+        case noClient
+        case noCurrentTrack
+
+        public var description: String {
+            switch self {
+            case .noClient: return "Nicht mit Music Assistant verbunden"
+            case .noCurrentTrack: return "Kein Titel wird aktuell abgespielt"
+            }
+        }
+    }
+
+    /// Lädt alle Library-Playlists neu. Wirft bewusst statt den globalen
+    /// connectionStatus zu setzen (anders als refreshPlayers()) — ein
+    /// fehlgeschlagener Playlist-Load soll nicht die ganze App als "nicht
+    /// verbunden" markieren, sondern lokal in der aufrufenden View landen.
+    public func loadPlaylists() async throws {
+        guard let client else { throw PlaylistError.noClient }
+        let list: [Playlist] = try await client.send("music/playlists/library_items", args: NoArgs())
+        playlists = list
+    }
+
+    /// Legt eine neue Playlist an und übernimmt sie optimistisch in `playlists`.
+    public func createPlaylist(name: String) async throws -> Playlist {
+        guard let client else { throw PlaylistError.noClient }
+        let playlist: Playlist = try await client.send("music/playlists/create_playlist", args: CreatePlaylistArgs(name: name))
+        playlists.append(playlist)
+        return playlist
+    }
+
+    /// Fügt den aktuell laufenden Titel des gewählten Players zur übergebenen
+    /// Playlist hinzu.
+    public func addCurrentTrackToPlaylist(_ playlist: Playlist) async throws {
+        guard let client else { throw PlaylistError.noClient }
+        guard let uri = selectedPlayer?.currentMedia?.uri else { throw PlaylistError.noCurrentTrack }
+        try await client.sendRaw(
+            "music/playlists/add_playlist_tracks",
+            args: AddPlaylistTracksArgs(dbPlaylistId: playlist.itemId, uris: [uri])
+        )
     }
 }

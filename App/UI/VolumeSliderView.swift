@@ -13,10 +13,10 @@ struct VolumeSliderView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
-            Slider(value: $sliderValue, in: 0...100, step: 1) { editing in
+            Slider(value: $sliderValue, in: 0...100) { editing in
                 isEditing = editing
                 if !editing {
-                    onChange(Int(sliderValue))
+                    onChange(Int(sliderValue.rounded()))
                 }
             }
 
