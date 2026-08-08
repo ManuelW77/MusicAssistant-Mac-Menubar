@@ -1,5 +1,4 @@
 import AppKit
-import Observation
 import SwiftUI
 import MAMenubarLib
 
@@ -14,16 +13,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
 
+    private static let menuBarIcon: NSImage? = {
+        guard let url = Bundle.module.url(forResource: "MenubarIcon", withExtension: "png"),
+              let image = NSImage(contentsOf: url) else { return nil }
+        image.size = NSSize(width: 18, height: 18)
+        image.isTemplate = true
+        return image
+    }()
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         appState.start()
         setupStatusItem()
-        observeConnectionStatus()
     }
 
     private func setupStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = item.button {
-            button.image = statusIcon(for: appState.connectionStatus)
+            button.image = Self.menuBarIcon
             button.target = self
             button.action = #selector(statusItemClicked(_:))
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -76,23 +82,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.menu = menu
         statusItem?.button?.performClick(nil)
         statusItem?.menu = nil
-    }
-
-    private func observeConnectionStatus() {
-        withObservationTracking {
-            _ = appState.connectionStatus
-        } onChange: { [weak self] in
-            Task { @MainActor in
-                self?.statusItem?.button?.image = self?.statusIcon(for: self?.appState.connectionStatus ?? .disconnected)
-                self?.observeConnectionStatus()
-            }
-        }
-    }
-
-    private func statusIcon(for status: ConnectionStatus) -> NSImage? {
-        let image = NSImage(systemSymbolName: status.symbolName, accessibilityDescription: "MA Menubar")
-        image?.isTemplate = true
-        return image
     }
 }
 

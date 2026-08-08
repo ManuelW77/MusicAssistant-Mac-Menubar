@@ -8,14 +8,6 @@ public enum ConnectionStatus: Equatable, Sendable {
     case reconnecting(attempt: Int)
     case error(String)
 
-    public var symbolName: String {
-        switch self {
-        case .connected: return "music.note"
-        case .connecting, .reconnecting: return "arrow.triangle.2.circlepath"
-        case .disconnected, .error: return "wifi.slash"
-        }
-    }
-
     public var description: String {
         switch self {
         case .disconnected: return "Nicht konfiguriert"

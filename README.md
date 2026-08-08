@@ -6,7 +6,8 @@ Kleines natives macOS-Menüleisten-Tool für [Music Assistant](https://www.music
 
 - Icon in der Menüleiste, Klick öffnet ein Popover mit Cover, Titel/Künstler und Transport-Controls (⏮ ⏯ ⏭).
 - Steuerung eines aktiven Players, wechselbar über einen Picker im Popover.
-- Settings-Dialog (⌘,) zum Einstellen von Server-URL, Access-Token und einer Whitelist, welche MA-Player überhaupt zur Auswahl stehen sollen.
+- Rechtsklick auf das Icon öffnet ein Menü mit „Einstellungen…" und „Beenden".
+- Settings-Dialog zum Einstellen von Server-URL, Access-Token, einer Whitelist der wählbaren MA-Player sowie „Bei Anmeldung starten".
 - Automatischer Reconnect mit Backoff, Live-Updates über die MA-WebSocket-Events (kein Polling).
 - Reine Menüleisten-App ohne Dock-Icon (`LSUIElement`).
 
@@ -62,10 +63,11 @@ mv "dist/MA Menubar.app" /Applications/
 
 ## Konfiguration
 
-Beim ersten Start über „Einstellungen…" im Popover (bzw. ⌘,):
+Beim ersten Start über Rechtsklick auf das Menüleisten-Icon → „Einstellungen…":
 
-1. **Tab „Server"**: Server-Basis-URL (z.B. `https://music.example.org`) und Access-Token eintragen, mit „Verbindung testen" prüfen, dann „Speichern".
-2. **Tab „Player"**: Aus den vom Server gemeldeten Playern die gewünschten für den Popover-Picker aktivieren.
+1. **Tab „Allgemein"**: optional „Bei Anmeldung starten" aktivieren. Nutzt `SMAppService.mainApp` — funktioniert nur aus einem echten `.app`-Bundle (`make app`), nicht aus dem rohen Debug-Build (`make run`/Xcode-Run).
+2. **Tab „Server"**: Server-Basis-URL (z.B. `https://music.example.org`) und Access-Token eintragen, mit „Verbindung testen" prüfen, dann „Speichern".
+3. **Tab „Player"**: Aus den vom Server gemeldeten Playern die gewünschten für den Popover-Picker aktivieren.
 
 Der Access-Token wird ausschließlich in der macOS-Keychain gespeichert (Service `org.fire-devils.MAMenubar`), nie im Klartext. Server-URL und Player-Whitelist liegen in `UserDefaults`.
 

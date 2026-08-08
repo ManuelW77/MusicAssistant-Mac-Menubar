@@ -9,6 +9,8 @@ struct SettingsView: View {
     @State private var tokenText = ""
     @State private var testState: TestState = .idle
     @State private var testedPlayers: [MAPlayer] = []
+    @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
+    @State private var launchAtLoginError: String?
 
     private enum TestState: Equatable {
         case idle
@@ -19,6 +21,9 @@ struct SettingsView: View {
 
     var body: some View {
         TabView {
+            generalTab
+                .tabItem { Label("Allgemein", systemImage: "gearshape") }
+
             serverTab
                 .tabItem { Label("Server", systemImage: "server.rack") }
 
@@ -28,6 +33,7 @@ struct SettingsView: View {
         .frame(width: 440, height: 340)
         .onAppear {
             serverURLText = appState.settings.serverBaseURLString
+            launchAtLoginEnabled = LaunchAtLogin.isEnabled
             // Als LSUIElement-App hat der Prozess standardmäßig keine Fokus-/
             // Vordergrund-Rechte; kurzzeitig auf .regular umschalten, damit
             // das Fenster wirklich key/aktiv wird (sonst landet es unfokussiert
@@ -41,6 +47,37 @@ struct SettingsView: View {
             // sobald das Settings-Fenster geschlossen wird.
             NSApp.setActivationPolicy(.accessory)
         }
+    }
+
+    private var generalTab: some View {
+        Form {
+            Section {
+                Toggle("Bei Anmeldung starten", isOn: launchAtLoginBinding)
+            } footer: {
+                if let launchAtLoginError {
+                    Text(launchAtLoginError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .padding(.top, 8)
+    }
+
+    private var launchAtLoginBinding: Binding<Bool> {
+        Binding(
+            get: { launchAtLoginEnabled },
+            set: { newValue in
+                do {
+                    try LaunchAtLogin.setEnabled(newValue)
+                    launchAtLoginEnabled = newValue
+                    launchAtLoginError = nil
+                } catch {
+                    launchAtLoginError = "Fehler: \(error.localizedDescription)"
+                }
+            }
+        )
     }
 
     private var serverTab: some View {
