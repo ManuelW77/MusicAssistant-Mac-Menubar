@@ -6,6 +6,7 @@ Kleines natives macOS-Menüleisten-Tool für [Music Assistant](https://www.music
 
 - Icon in der Menüleiste, Klick öffnet ein Popover mit Cover, Titel/Künstler und Transport-Controls (⏮ ⏯ ⏭).
 - Steuerung eines aktiven Players, wechselbar über einen Picker im Popover.
+- Aktuellen Titel per Klick zu einer vorhandenen oder neu anzulegenden MA-Playlist hinzufügen.
 - Rechtsklick auf das Icon öffnet ein Menü mit „Einstellungen…" und „Beenden".
 - Settings-Dialog zum Einstellen von Server-URL, Access-Token, einer Whitelist der wählbaren MA-Player sowie „Bei Anmeldung starten".
 - Automatischer Reconnect mit Backoff, Live-Updates über die MA-WebSocket-Events (kein Polling).
