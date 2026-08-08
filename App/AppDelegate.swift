@@ -49,7 +49,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.appState.restart()
+            // queue: .main garantiert nur die Ausführung auf dem Main-Thread,
+            // isoliert den Closure-Typ selbst aber nicht auf MainActor —
+            // daher der explizite Hop für den Zugriff auf appState.restart().
+            Task { @MainActor in
+                self?.appState.restart()
+            }
         }
     }
 
