@@ -10,20 +10,12 @@ struct SettingsView: View {
     @State private var testedPlayers: [MAPlayer] = []
     @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
     @State private var launchAtLoginError: String?
-    @State private var updateState: UpdateState = .idle
 
     private enum TestState: Equatable {
         case idle
         case testing
         case success(count: Int)
         case failure(String)
-    }
-
-    private enum UpdateState: Equatable {
-        case idle
-        case checking
-        case upToDate
-        case available(UpdateChecker.UpdateInfo)
     }
 
     private var appVersion: String {
@@ -56,7 +48,10 @@ struct SettingsView: View {
             // wird. SettingsLink öffnet das Fenster, kümmert sich aber nicht
             // selbst um App-Aktivierung.
             WindowActivation.windowDidAppear()
-            Task { await checkForUpdates() }
+            // Kein Task { await checkForUpdates() } mehr nötig — die
+            // Hintergrund-Update-Check-Schleife (AppState.startUpdateChecks())
+            // hat beim App-Start bereits einen Check gemacht, dieses Fenster
+            // liest nur noch den geteilten Status.
         }
         .onDisappear {
             // Wieder zur reinen Menüleisten-App ohne Dock-Icon zurückschalten,
@@ -84,12 +79,12 @@ struct SettingsView: View {
 
                 HStack {
                     Button("Nach Updates suchen") {
-                        Task { await checkForUpdates() }
+                        Task { await appState.checkForUpdate() }
                     }
                     .buttonStyle(.glass)
-                    .disabled(updateState == .checking)
+                    .disabled(appState.isCheckingForUpdate)
 
-                    if updateState == .checking {
+                    if appState.isCheckingForUpdate {
                         ProgressView()
                             .controlSize(.small)
                     }
@@ -104,18 +99,17 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var updateStatusLabel: some View {
-        switch updateState {
-        case .idle, .checking:
+        if appState.isCheckingForUpdate {
             EmptyView()
-        case .upToDate:
-            Label("Aktuell", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-                .font(.caption)
-        case .available(let info):
+        } else if let info = appState.updateInfo {
             Link(destination: info.url) {
                 Label("Version \(info.latestVersion) verfügbar", systemImage: "arrow.down.circle.fill")
             }
             .font(.caption)
+        } else if appState.lastUpdateCheckDate != nil {
+            Label("Aktuell", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+                .font(.caption)
         }
     }
 
@@ -257,14 +251,5 @@ struct SettingsView: View {
 
     private func save() {
         appState.saveCredentials(baseURLString: serverURLText, token: tokenText)
-    }
-
-    private func checkForUpdates() async {
-        updateState = .checking
-        if let info = await UpdateChecker.checkForUpdate(currentVersion: appVersion) {
-            updateState = .available(info)
-        } else {
-            updateState = .upToDate
-        }
     }
 }

@@ -1,8 +1,9 @@
 import Foundation
 
 /// Prüft über die GitHub-Releases-API, ob eine neuere Version als die
-/// aktuell laufende veröffentlicht ist. Kein Polling/Hintergrundtimer —
-/// wird bewusst nur bei Bedarf (Settings-Öffnen/Button) aufgerufen.
+/// aktuell laufende veröffentlicht ist. Reine, zustandslose Abfragefunktion —
+/// den Hintergrund-Rhythmus (alle 24h) und den geteilten Ergebnis-State
+/// verwaltet AppState.startUpdateChecks(), nicht diese Datei.
 public enum UpdateChecker {
     public static let repository = "ManuelW77/MusicAssistant-Mac-Menubar"
 

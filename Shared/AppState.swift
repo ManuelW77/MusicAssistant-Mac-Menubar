@@ -44,11 +44,17 @@ public final class AppState {
         players.first { $0.playerId == selectedPlayerID }
     }
 
+    public private(set) var updateInfo: UpdateChecker.UpdateInfo?
+    public private(set) var lastUpdateCheckDate: Date?
+    public private(set) var isCheckingForUpdate = false
+
     public let settings: AppSettingsStore
     private var client: MassWebSocketClient?
     private var supervisorTask: Task<Void, Never>?
     private var reconnectAttempt = 0
     private var providerIconCache: [String: String] = [:]
+    private var updateCheckTask: Task<Void, Never>?
+    private static let updateCheckInterval: Double = 24 * 60 * 60
 
     private static let backoffSchedule: [Double] = [1, 2, 4, 8, 16, 30]
 
@@ -77,6 +83,32 @@ public final class AppState {
         stop()
         reconnectAttempt = 0
         start()
+    }
+
+    /// Startet die Update-Check-Schleife (24h-Rhythmus + Sofort-Check beim
+    /// Start). Bewusst unabhängig von start()/stop()/restart() — der
+    /// MA-Verbindungs-Lifecycle, an Server-URL/Token gekoppelt — damit ein
+    /// Neuverbinden (z.B. nach Speichern neuer Zugangsdaten) den Update-Status
+    /// nicht zurücksetzt.
+    public func startUpdateChecks() {
+        guard updateCheckTask == nil else { return }
+        updateCheckTask = Task { await runUpdateCheckLoop() }
+    }
+
+    private func runUpdateCheckLoop() async {
+        while !Task.isCancelled {
+            await checkForUpdate()
+            try? await Task.sleep(for: .seconds(Self.updateCheckInterval))
+        }
+    }
+
+    /// Auch für den manuellen "Nach Updates suchen"-Button im Settings-Dialog.
+    public func checkForUpdate() async {
+        isCheckingForUpdate = true
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        updateInfo = await UpdateChecker.checkForUpdate(currentVersion: version)
+        lastUpdateCheckDate = Date()
+        isCheckingForUpdate = false
     }
 
     private func runSupervised() async {
