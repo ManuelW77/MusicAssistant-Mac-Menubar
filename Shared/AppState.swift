@@ -225,4 +225,46 @@ public final class AppState {
             args: AddPlaylistTracksArgs(dbPlaylistId: playlist.itemId, uris: [uri])
         )
     }
+
+    public enum FavoriteError: Error, CustomStringConvertible, Sendable {
+        case noClient
+        case noCurrentTrack
+
+        public var description: String {
+            switch self {
+            case .noClient: return "Nicht mit Music Assistant verbunden"
+            case .noCurrentTrack: return "Kein Titel wird aktuell abgespielt"
+            }
+        }
+    }
+
+    /// Lädt den Favoriten-Status des aktuell laufenden Titels. Es gibt kein
+    /// Event für Favoriten-Änderungen, daher wird hier aktiv nachgefragt statt
+    /// passiv aus dem Player-Zustand übernommen.
+    public func loadFavoriteStatus() async throws -> Bool {
+        guard let client else { throw FavoriteError.noClient }
+        guard let uri = selectedPlayer?.currentMedia?.uri else { throw FavoriteError.noCurrentTrack }
+        let item: MediaItemInfo = try await client.send("music/item_by_uri", args: ItemByURIArgs(uri: uri))
+        return item.favorite
+    }
+
+    /// Togglet den Favoriten-Status des aktuell laufenden Titels und gibt den
+    /// neuen Status zurück. `remove_item` braucht (anders als `add_item`) die
+    /// library item_id + media_type statt der URI, daher der vorgeschaltete
+    /// item_by_uri-Aufruf.
+    public func toggleFavorite() async throws -> Bool {
+        guard let client else { throw FavoriteError.noClient }
+        guard let uri = selectedPlayer?.currentMedia?.uri else { throw FavoriteError.noCurrentTrack }
+        let item: MediaItemInfo = try await client.send("music/item_by_uri", args: ItemByURIArgs(uri: uri))
+        if item.favorite {
+            try await client.sendRaw(
+                "music/favorites/remove_item",
+                args: RemoveFavoriteArgs(mediaType: item.mediaType, libraryItemId: item.itemId)
+            )
+            return false
+        } else {
+            try await client.sendRaw("music/favorites/add_item", args: AddFavoriteArgs(item: uri))
+            return true
+        }
+    }
 }

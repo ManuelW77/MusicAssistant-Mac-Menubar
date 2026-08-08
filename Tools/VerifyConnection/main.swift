@@ -47,6 +47,14 @@ struct VerifyConnectionMain {
                 print("- \(playlist.name) [item_id=\(playlist.itemId) provider=\(playlist.provider)] uri=\(playlist.uri ?? "-")")
             }
 
+            if let uri = players.first(where: { $0.currentMedia?.uri != nil })?.currentMedia?.uri {
+                print("\nLade Media-Item-Info für \(uri)…")
+                let item: MediaItemInfo = try await client.send("music/item_by_uri", args: ItemByURIArgs(uri: uri))
+                print("item_id=\(item.itemId) provider=\(item.provider) media_type=\(item.mediaType) favorite=\(item.favorite)")
+            } else {
+                print("\nKein Player mit laufender Wiedergabe für den item_by_uri-Test gefunden.")
+            }
+
             await client.disconnect()
         } catch {
             print("Fehler: \(error)")

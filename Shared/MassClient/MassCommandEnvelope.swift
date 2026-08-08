@@ -45,3 +45,24 @@ public struct AddPlaylistTracksArgs: Encodable, Sendable {
         self.uris = uris
     }
 }
+
+public struct ItemByURIArgs: Encodable, Sendable {
+    public let uri: String
+    public init(uri: String) { self.uri = uri }
+}
+
+/// Feldname bewusst `item`, nicht `uri` — so heißt der Server-Parameter von
+/// `music/favorites/add_item` (akzeptiert dort auch einen reinen URI-String).
+public struct AddFavoriteArgs: Encodable, Sendable {
+    public let item: String
+    public init(item: String) { self.item = item }
+}
+
+public struct RemoveFavoriteArgs: Encodable, Sendable {
+    public let mediaType: String
+    public let libraryItemId: String
+    public init(mediaType: String, libraryItemId: String) {
+        self.mediaType = mediaType
+        self.libraryItemId = libraryItemId
+    }
+}

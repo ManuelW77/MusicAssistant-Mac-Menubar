@@ -42,17 +42,21 @@ struct MenuBarContentView: View {
                     .lineLimit(1)
             }
 
-            Button {
-                showAddToPlaylist = true
-            } label: {
-                Label("Zu Playlist hinzufügen", systemImage: "text.badge.plus")
-                    .labelStyle(.iconOnly)
-            }
-            .buttonStyle(.glass)
-            .disabled(appState.selectedPlayer?.currentMedia == nil)
-            .popover(isPresented: $showAddToPlaylist) {
-                AddToPlaylistView()
-                    .environment(appState)
+            HStack(spacing: 8) {
+                FavoriteButtonView()
+
+                Button {
+                    showAddToPlaylist = true
+                } label: {
+                    Label("Zu Playlist hinzufügen", systemImage: "text.badge.plus")
+                        .labelStyle(.iconOnly)
+                }
+                .buttonStyle(.glass)
+                .disabled(appState.selectedPlayer?.currentMedia == nil)
+                .popover(isPresented: $showAddToPlaylist) {
+                    AddToPlaylistView()
+                        .environment(appState)
+                }
             }
 
             PlayerControlsView(
