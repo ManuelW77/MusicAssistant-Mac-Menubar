@@ -110,7 +110,7 @@ public actor MassWebSocketClient {
                 do {
                     try await sendTask.send(.string(text))
                 } catch {
-                    await self.failPending(messageId, error: error)
+                    self.failPending(messageId, error: error)
                 }
             }
         }

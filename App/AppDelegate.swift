@@ -57,10 +57,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showContextMenu() {
-        let menu = NSMenu()
-        menu.addItem(withTitle: "Einstellungen…", action: #selector(openSettings), keyEquivalent: "").target = self
-        menu.addItem(.separator())
-        menu.addItem(withTitle: "Beenden", action: #selector(quit), keyEquivalent: "").target = self
+        // NSMenu + der klassische `sendAction(Selector(("showSettingsWindow:")))`-
+        // Trick wird von neueren macOS-Versionen für das Öffnen der Settings-
+        // Scene nicht mehr zuverlässig unterstützt ("Please use SettingsLink").
+        // NSHostingMenu übersetzt SwiftUI-Menüinhalt (inkl. SettingsLink) in
+        // ein natives NSMenu, dadurch funktioniert SettingsLink korrekt.
+        let menu = NSHostingMenu(rootView: ContextMenuContent())
 
         // Menü nur für diesen einen Klick setzen: Ist statusItem.menu dauerhaft
         // gesetzt, übernimmt AppKit die Klick-Behandlung komplett und der
@@ -68,20 +70,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.menu = menu
         statusItem?.button?.performClick(nil)
         statusItem?.menu = nil
-    }
-
-    @objc private func openSettings() {
-        // Als LSUIElement-App hat der Prozess standardmäßig keine Fokus-/
-        // Vordergrund-Rechte; kurzzeitig auf .regular umschalten, damit das
-        // Fenster wirklich key/aktiv wird (siehe SettingsView.onDisappear
-        // für das Zurückschalten).
-        NSApp.setActivationPolicy(.regular)
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    @objc private func quit() {
-        NSApp.terminate(nil)
     }
 
     private func observeConnectionStatus() {
@@ -99,5 +87,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let image = NSImage(systemSymbolName: status.symbolName, accessibilityDescription: "MA Menubar")
         image?.isTemplate = true
         return image
+    }
+}
+
+/// Inhalt des Rechtsklick-Kontextmenüs, gehostet über NSHostingMenu.
+/// SettingsLink ist der von macOS vorgeschriebene Weg, um die Settings-Scene
+/// programmatisch zu öffnen (der alte showSettingsWindow:-Selector-Trick
+/// wird nicht mehr zuverlässig unterstützt).
+private struct ContextMenuContent: View {
+    var body: some View {
+        SettingsLink {
+            Text("Einstellungen…")
+        }
+        Divider()
+        Button("Beenden") {
+            NSApp.terminate(nil)
+        }
     }
 }

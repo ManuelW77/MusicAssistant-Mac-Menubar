@@ -34,6 +34,24 @@ struct JSONValueTests {
         #expect(player.currentMedia?.title == "Testsong")
     }
 
+    @Test("fällt bei Sync-Gruppen-Playern (volume_level == nil) auf group_volume zurück")
+    func fallsBackToGroupVolume() throws {
+        let json = """
+        {
+            "player_id": "syncgroup-1",
+            "name": "Wohnzimmer-Bad-Küche",
+            "type": "group",
+            "volume_level": null,
+            "group_volume": 36
+        }
+        """
+        let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+        let player = try value.decode(MAPlayer.self)
+        #expect(player.volumeLevel == nil)
+        #expect(player.groupVolume == 36)
+        #expect(player.effectiveVolume == 36)
+    }
+
     @Test("mappt unbekannten playback_state-Wert defensiv auf .unknown")
     func fallsBackToUnknownPlaybackState() throws {
         let json = #"{"player_id": "p", "name": "n", "playback_state": "buffering_something_new"}"#

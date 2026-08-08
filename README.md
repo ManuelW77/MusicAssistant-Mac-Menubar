@@ -12,8 +12,8 @@ Kleines natives macOS-Menüleisten-Tool für [Music Assistant](https://www.music
 
 ## Voraussetzungen
 
-- macOS 15+
-- Xcode 16+ bzw. ein Swift-6-Toolchain
+- macOS 26+ (Liquid-Glass-UI)
+- Xcode mit swift-tools-version 6.2+
 - Ein laufender Music-Assistant-Server sowie ein Long-Lived Access Token (MA-Web-UI → Profil → Access Tokens)
 
 ## Projektstruktur

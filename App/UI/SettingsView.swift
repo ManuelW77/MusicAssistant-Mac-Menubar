@@ -28,10 +28,17 @@ struct SettingsView: View {
         .frame(width: 440, height: 340)
         .onAppear {
             serverURLText = appState.settings.serverBaseURLString
+            // Als LSUIElement-App hat der Prozess standardmäßig keine Fokus-/
+            // Vordergrund-Rechte; kurzzeitig auf .regular umschalten, damit
+            // das Fenster wirklich key/aktiv wird (sonst landet es unfokussiert
+            // hinter anderen Fenstern). SettingsLink öffnet das Fenster, kümmert
+            // sich aber nicht selbst um App-Aktivierung.
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
         }
         .onDisappear {
             // Wieder zur reinen Menüleisten-App ohne Dock-Icon zurückschalten,
-            // sobald das Settings-Fenster geschlossen wird (siehe MenuBarContentView).
+            // sobald das Settings-Fenster geschlossen wird.
             NSApp.setActivationPolicy(.accessory)
         }
     }

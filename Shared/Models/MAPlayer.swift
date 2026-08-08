@@ -11,8 +11,15 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
     public var playbackState: PlaybackState?
     public var currentMedia: PlayerMedia?
     public var volumeLevel: Int?
+    /// Bei Sync-Gruppen-Playern (type == "group") liefert der Server für
+    /// volumeLevel null; der aggregierte Wert steckt stattdessen hier.
+    public var groupVolume: Int?
 
     public var id: String { playerId }
+
+    /// Anzuzeigende Lautstärke unabhängig davon, ob es sich um einen
+    /// einzelnen Player oder eine Sync-Gruppe handelt.
+    public var effectiveVolume: Int? { volumeLevel ?? groupVolume }
 
     public init(
         playerId: String,
@@ -20,7 +27,8 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
         available: Bool? = nil,
         playbackState: PlaybackState? = nil,
         currentMedia: PlayerMedia? = nil,
-        volumeLevel: Int? = nil
+        volumeLevel: Int? = nil,
+        groupVolume: Int? = nil
     ) {
         self.playerId = playerId
         self.name = name
@@ -28,6 +36,7 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
         self.playbackState = playbackState
         self.currentMedia = currentMedia
         self.volumeLevel = volumeLevel
+        self.groupVolume = groupVolume
     }
 }
 

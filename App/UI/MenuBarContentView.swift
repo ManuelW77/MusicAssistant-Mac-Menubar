@@ -48,7 +48,7 @@ struct MenuBarContentView: View {
                 onNext: appState.next
             )
 
-            VolumeSliderView(volumeLevel: appState.selectedPlayer?.volumeLevel) { level in
+            VolumeSliderView(volumeLevel: appState.selectedPlayer?.effectiveVolume) { level in
                 appState.setVolume(level)
             }
 
