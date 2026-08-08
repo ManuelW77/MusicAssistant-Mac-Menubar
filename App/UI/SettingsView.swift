@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var testedPlayers: [MAPlayer] = []
     @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
     @State private var launchAtLoginError: String?
+    @State private var updateState: UpdateState = .idle
 
     private enum TestState: Equatable {
         case idle
@@ -18,6 +19,19 @@ struct SettingsView: View {
         case success(count: Int)
         case failure(String)
     }
+
+    private enum UpdateState: Equatable {
+        case idle
+        case checking
+        case upToDate
+        case available(UpdateChecker.UpdateInfo)
+    }
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+    }
+
+    private static let repositoryURL = URL(string: "https://github.com/\(UpdateChecker.repository)")!
 
     var body: some View {
         TabView {
@@ -30,7 +44,7 @@ struct SettingsView: View {
             playerTab
                 .tabItem { Label("Player", systemImage: "hifispeaker") }
         }
-        .frame(width: 440, height: 340)
+        .frame(width: 440, height: 420)
         .onAppear {
             serverURLText = appState.settings.serverBaseURLString
             launchAtLoginEnabled = LaunchAtLogin.isEnabled
@@ -41,6 +55,7 @@ struct SettingsView: View {
             // sich aber nicht selbst um App-Aktivierung.
             NSApp.setActivationPolicy(.regular)
             NSApp.activate(ignoringOtherApps: true)
+            Task { await checkForUpdates() }
         }
         .onDisappear {
             // Wieder zur reinen Menüleisten-App ohne Dock-Icon zurückschalten,
@@ -60,9 +75,47 @@ struct SettingsView: View {
                         .foregroundStyle(.red)
                 }
             }
+
+            Section("Über") {
+                LabeledContent("Version", value: appVersion)
+                LabeledContent("Entwickler", value: "Manuel Weiser")
+                Link("GitHub-Repository", destination: Self.repositoryURL)
+
+                HStack {
+                    Button("Nach Updates suchen") {
+                        Task { await checkForUpdates() }
+                    }
+                    .buttonStyle(.glass)
+                    .disabled(updateState == .checking)
+
+                    if updateState == .checking {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+
+                    updateStatusLabel
+                }
+            }
         }
         .formStyle(.grouped)
         .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private var updateStatusLabel: some View {
+        switch updateState {
+        case .idle, .checking:
+            EmptyView()
+        case .upToDate:
+            Label("Aktuell", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+                .font(.caption)
+        case .available(let info):
+            Link(destination: info.url) {
+                Label("Version \(info.latestVersion) verfügbar", systemImage: "arrow.down.circle.fill")
+            }
+            .font(.caption)
+        }
     }
 
     private var launchAtLoginBinding: Binding<Bool> {
@@ -206,6 +259,15 @@ struct SettingsView: View {
             try appState.saveCredentials(baseURLString: serverURLText, token: tokenText)
         } catch {
             testState = .failure("Speichern fehlgeschlagen: \(error)")
+        }
+    }
+
+    private func checkForUpdates() async {
+        updateState = .checking
+        if let info = await UpdateChecker.checkForUpdate(currentVersion: appVersion) {
+            updateState = .available(info)
+        } else {
+            updateState = .upToDate
         }
     }
 }

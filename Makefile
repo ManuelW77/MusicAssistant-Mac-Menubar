@@ -1,4 +1,4 @@
-.PHONY: build test run verify app dmg
+.PHONY: build test run verify app dmg release
 
 APP_NAME := MA Menubar
 APP_BUNDLE := dist/$(APP_NAME).app
@@ -64,3 +64,11 @@ dmg:
 	hdiutil create -volname "$(APP_NAME)" -srcfolder dist/dmg-staging -ov -format UDZO "$(DMG_PATH)"
 	rm -rf dist/dmg-staging
 	@echo "Fertig: $(DMG_PATH)"
+
+# Version bumpen (Standard: patch) und Release via GitHub Actions anstoßen.
+# Nur vom main-Branch aus lauffähig, siehe scripts/release.sh.
+#   make release            # Patch-Bump
+#   make release BUMP=minor # Minor-Bump
+#   make release BUMP=v2.0.0
+release:
+	./scripts/release.sh $(BUMP)

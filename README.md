@@ -73,10 +73,17 @@ make dmg
 
 Versionierung folgt [SemVer](https://semver.org/), beginnend bei `v1.0.0`. Bei einem Tag-Push übernimmt der Workflow den Tag automatisch als `CFBundleShortVersionString` (Tag ohne führendes `v`) und die GitHub-Actions-Run-Nummer als `CFBundleVersion` (Build-Nummer) — `App/Info.plist` muss dafür nicht manuell angepasst werden.
 
+**Branch-Modell**: `devel` ist der Arbeits-Branch (geht an Gitea `origin/devel`), `main` ist ein reiner Release-Spiegel — er wird nur beim Release aktualisiert und dann zu `origin` **und** `github` gepusht. Ein Release auslösen:
+
 ```
-git tag v1.0.0
-git push github v1.0.0
+git checkout main
+git merge devel
+make release              # Patch-Bump, z.B. 1.0.0 -> 1.0.1
+make release BUMP=minor   # Minor-Bump
+make release BUMP=v2.0.0  # explizite Version
 ```
+
+`scripts/release.sh` bricht ab, wenn man sich nicht auf `main` befindet oder der Working Tree nicht sauber ist, ermittelt die nächste Version aus dem letzten `vX.Y.Z`-Tag, fragt vor dem Push nochmal nach und pusht dann `main` + den neuen Tag zu beiden Remotes — der Tag-Push zu GitHub löst den Sign-&-Notarize-Workflow aus.
 
 Dafür müssen einmalig folgende Repo-Secrets gesetzt werden (`gh secret set NAME --repo ManuelW77/MusicAssistant-Mac-Menubar -b"…"`, selbst ausführen — dafür wird das Zertifikat/die Credentials nirgendwo sonst eingegeben):
 
@@ -92,7 +99,7 @@ Dafür müssen einmalig folgende Repo-Secrets gesetzt werden (`gh secret set NAM
 
 Beim ersten Start über Rechtsklick auf das Menüleisten-Icon → „Einstellungen…":
 
-1. **Tab „Allgemein"**: optional „Bei Anmeldung starten" aktivieren. Nutzt `SMAppService.mainApp` — funktioniert nur aus einem echten `.app`-Bundle (`make app`), nicht aus dem rohen Debug-Build (`make run`/Xcode-Run).
+1. **Tab „Allgemein"**: optional „Bei Anmeldung starten" aktivieren (nutzt `SMAppService.mainApp` — funktioniert nur aus einem echten `.app`-Bundle, nicht aus dem rohen Debug-Build). Zeigt außerdem aktuelle Version, Entwickler und GitHub-Link, und prüft beim Öffnen automatisch (sowie über „Nach Updates suchen") gegen die GitHub-Releases-API, ob eine neuere Version verfügbar ist.
 2. **Tab „Server"**: Server-Basis-URL (z.B. `https://music.example.org`) und Access-Token eintragen, mit „Verbindung testen" prüfen, dann „Speichern".
 3. **Tab „Player"**: Aus den vom Server gemeldeten Playern die gewünschten für den Popover-Picker aktivieren.
 
