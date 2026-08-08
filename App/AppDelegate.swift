@@ -53,6 +53,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             popover.performClose(nil)
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            // Ohne das bleibt das Popover-Fenster "nicht key" (Controls wie
+            // der Play-Button rendern inaktiv), bis man reinklickt. Bewusst
+            // kein NSApp.activate()/.regular-Policy-Wechsel wie bei den
+            // Settings — das würde bei jedem Icon-Klick kurz ein Dock-Icon
+            // aufblitzen lassen.
+            popover.contentViewController?.view.window?.makeKey()
         }
     }
 
