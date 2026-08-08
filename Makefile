@@ -1,7 +1,8 @@
-.PHONY: build test run verify app
+.PHONY: build test run verify app dmg
 
 APP_NAME := MA Menubar
 APP_BUNDLE := dist/$(APP_NAME).app
+DMG_PATH := dist/$(APP_NAME).dmg
 
 # Echte Signing-Identität aus der Keychain (siehe `security find-identity -v
 # -p codesigning`). Auf einem Rechner ohne dieses Zertifikat mit
@@ -49,3 +50,17 @@ app:
 	# the hardened runtime enabled" ab.
 	codesign --force --options runtime --timestamp --sign "$(SIGN_IDENTITY)" --entitlements App/MAMenubar.entitlements "$(APP_BUNDLE)"
 	@echo "Fertig: $(APP_BUNDLE)"
+
+# Baut ein Drag-in-Applications-.dmg aus dem bereits gebauten (und für
+# Distribution im Idealfall bereits notarisierten/gestapelten) .app-Bundle.
+# Voraussetzung: `make app` (bzw. der App/Notarization-Schritt in CI) ist
+# bereits gelaufen, "$(APP_BUNDLE)" existiert.
+dmg:
+	rm -f "$(DMG_PATH)"
+	rm -rf dist/dmg-staging
+	mkdir -p dist/dmg-staging
+	cp -R "$(APP_BUNDLE)" dist/dmg-staging/
+	ln -s /Applications "dist/dmg-staging/Applications"
+	hdiutil create -volname "$(APP_NAME)" -srcfolder dist/dmg-staging -ov -format UDZO "$(DMG_PATH)"
+	rm -rf dist/dmg-staging
+	@echo "Fertig: $(DMG_PATH)"

@@ -3,7 +3,7 @@ name: Build, Sign & Notarize Release
 # Läuft bei einem Tag-Push (z.B. `git push github vX.Y.Z`) oder manuell über
 # den "Run workflow"-Button. Baut per `make app` (Release-Build), signiert
 # mit dem Developer-ID-Zertifikat aus den Secrets, notarisiert bei Apple und
-# hängt das gezippte .app-Bundle an eine neue GitHub Release.
+# hängt ein Drag-in-Applications-.dmg (make dmg) an eine neue GitHub Release.
 #
 # Voraussetzung: Xcode auf dem Runner muss die swift-tools-version aus
 # Package.swift (aktuell 6.2, .macOS(.v26)) unterstützen. Falls der
@@ -88,15 +88,18 @@ jobs:
           xcrun stapler staple "dist/MA Menubar.app"
           rm -f "$KEY_PATH"
 
-      - name: Release-Artefakt packen
+      - name: DMG bauen
+        run: make dmg
+
+      - name: Release-Artefakt benennen
         env:
           REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           mkdir -p out
-          ditto -c -k --keepParent "dist/MA Menubar.app" "out/MA-Menubar-${REF_NAME}.zip"
+          mv "dist/MA Menubar.dmg" "out/MA-Menubar-${REF_NAME}.dmg"
 
       - name: GitHub Release erstellen
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
-          files: out/*.zip
+          files: out/*.dmg
