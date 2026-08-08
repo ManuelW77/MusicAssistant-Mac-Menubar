@@ -61,6 +61,25 @@ mv "dist/MA Menubar.app" /Applications/
 
 `run` und `app` signieren standardmäßig mit dem lokalen Zertifikat `Apple Development: Manuel Weiser (469HR6FMTH)` aus der Keychain (siehe `SIGN_IDENTITY` im `Makefile`). Auf einem Rechner ohne dieses Zertifikat mit `make app SIGN_IDENTITY=-` auf Ad-hoc-Signatur zurückfallen.
 
+## Signierte Releases (GitHub Actions)
+
+Das Repo wird zusätzlich zu Gitea (`origin`) nach GitHub gespiegelt (`github`-Remote, https://github.com/ManuelW77/MusicAssistant-Mac-Menubar). Ein Push eines `vX.Y.Z`-Tags dorthin (oder ein manueller Trigger) löst `.github/workflows/release.yml` aus: baut per `make app`, signiert mit einem **Developer-ID-Application**-Zertifikat, notarisiert bei Apple (`notarytool`) und hängt das gestapelte, gezippte `.app`-Bundle an eine neue GitHub Release — Gatekeeper zeigt auf fremden Macs dann keine Warnung mehr.
+
+```
+git tag v1.0.0
+git push github v1.0.0
+```
+
+Dafür müssen einmalig folgende Repo-Secrets gesetzt werden (`gh secret set NAME --repo ManuelW77/MusicAssistant-Mac-Menubar -b"…"`, selbst ausführen — dafür wird das Zertifikat/die Credentials nirgendwo sonst eingegeben):
+
+| Secret | Herkunft |
+|---|---|
+| `MACOS_CERTIFICATE_P12_BASE64` | Developer-ID-Application-Zertifikat + privater Schlüssel aus Keychain Access als `.p12` exportieren, dann `base64 -i certificate.p12` |
+| `MACOS_CERTIFICATE_PASSWORD` | Passwort, das beim `.p12`-Export vergeben wurde |
+| `KEYCHAIN_PASSWORD` | Beliebiges Passwort nur für die temporäre CI-Keychain, z.B. `openssl rand -base64 24` |
+| `DEVELOPER_ID_IDENTITY` | Exakter Identity-String, z.B. `Developer ID Application: Manuel Weiser (TEAMID)` (siehe `security find-identity -v -p codesigning`) |
+| `NOTARY_KEY_ID` / `NOTARY_ISSUER_ID` / `NOTARY_KEY_P8_BASE64` | App Store Connect → Users and Access → Integrations → App Store Connect API: Key erzeugen (Rolle „Developer" reicht), `.p8` einmalig herunterladen und `base64 -i AuthKey_XXXX.p8` |
+
 ## Konfiguration
 
 Beim ersten Start über Rechtsklick auf das Menüleisten-Icon → „Einstellungen…":
