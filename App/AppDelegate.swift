@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         appState.start()
         setupStatusItem()
+        openSettingsWindowIfNeeded()
 
         // Nach Mac-Schlaf ist die TCP-Verbindung oft lautlos tot (kein Close-
         // Frame), ohne aktiven Traffic bemerkt receive() das ggf. sehr lange
@@ -56,6 +57,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.appState.restart()
             }
         }
+    }
+
+    // Reine Menüleisten-App: Schließen des Suche- oder Einstellungen-Fensters
+    // darf die App nicht beenden, sie soll im Hintergrund weiterlaufen (das
+    // Standardverhalten ohne diese Methode ist "letztes Fenster zu = App zu").
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
+    /// Öffnet das Settings-Fenster gezielt beim Start, aber nur ohne gültige
+    /// Zugangsdaten (Ersteinrichtung) — openSettings/SettingsLink sind nur
+    /// aus echtem SwiftUI-Kontext aufrufbar, nicht aus AppDelegate, und der
+    /// klassische showSettingsWindow:-Selector-Trick funktioniert auf dieser
+    /// macOS-Version nicht mehr zuverlässig. Wiederverwendet stattdessen
+    /// denselben SettingsLink-Mechanismus wie das Rechtsklick-Kontextmenü,
+    /// nur ohne sichtbaren Klick über die dokumentierte AppKit-API
+    /// NSMenu.performActionForItem(at:) ("simulates the user selecting the
+    /// menu item ... without visibly displaying the menu").
+    private func openSettingsWindowIfNeeded() {
+        guard appState.settings.serverBaseURL == nil || appState.settings.accessToken == nil else { return }
+        let menu = NSHostingMenu(rootView: SettingsLink { Text("Einstellungen…") })
+        menu.performActionForItem(at: 0)
     }
 
     private func setupStatusItem() {

@@ -19,7 +19,11 @@ struct MassRawFrame: Decodable {
         case data
         case messageId = "message_id"
         case errorCode = "error_code"
-        case error
+        // Server-Feldname ist "details", nicht "error" (music_assistant_models/
+        // api.py, ErrorResultMessage) — vorher landete hier immer nil, daher
+        // zeigte jede Fehlermeldung nur den generischen "Unbekannter Fehler"-
+        // Fallback statt des echten Servertexts.
+        case error = "details"
         case translationKey = "translation_key"
         case partial
         case result

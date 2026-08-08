@@ -3,6 +3,7 @@ import MAMenubarLib
 
 struct MenuBarContentView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.openWindow) private var openWindow
     @State private var showAddToPlaylist = false
 
     private var resolvedImageURL: URL? {
@@ -11,25 +12,53 @@ struct MenuBarContentView: View {
         return MassEndpoint.resolveImageURL(raw, serverBaseURL: serverBaseURL)
     }
 
+    private var playbackProgress: Double? {
+        guard let media = appState.selectedPlayer?.currentMedia,
+              let duration = media.duration, duration > 0,
+              let elapsed = media.elapsedTime else { return nil }
+        return min(max(elapsed / duration, 0), 1)
+    }
+
+    private static let coverSize: CGFloat = 160
+    private static let progressBarInset: CGFloat = 8
+    private static var progressBarWidth: CGFloat { coverSize - 2 * progressBarInset }
+    private static let progressTrackExtraWidth: CGFloat = 10
+    private static var progressTrackWidth: CGFloat { progressBarWidth + progressTrackExtraWidth }
+
     var body: some View {
         @Bindable var appState = appState
 
         VStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(.clear)
-                    .glassEffect(in: RoundedRectangle(cornerRadius: 10))
-                AsyncImage(url: resolvedImageURL) { phase in
-                    if let image = phase.image {
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    } else {
-                        Image(systemName: "music.note")
-                            .font(.system(size: 32))
-                            .foregroundStyle(.secondary)
+            ZStack(alignment: .bottom) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(.clear)
+                        .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                    AsyncImage(url: resolvedImageURL) { phase in
+                        if let image = phase.image {
+                            image.resizable().aspectRatio(contentMode: .fill)
+                        } else {
+                            Image(systemName: "music.note")
+                                .font(.system(size: 32))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
+
+                if let playbackProgress {
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.black)
+                            .frame(width: Self.progressTrackWidth, height: 8)
+                        Capsule()
+                            .fill(Color.white)
+                            .frame(width: max(0, Self.progressBarWidth * playbackProgress - 4), height: 4)
+                            .padding(.leading, 2)
+                    }
+                    .padding(.bottom, 6)
+                }
             }
-            .frame(width: 160, height: 160)
+            .frame(width: Self.coverSize, height: Self.coverSize)
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             VStack(spacing: 2) {
@@ -59,6 +88,14 @@ struct MenuBarContentView: View {
                     AddToPlaylistView()
                         .environment(appState)
                 }
+
+                Button {
+                    openWindow(id: "search")
+                } label: {
+                    Label("Suche", systemImage: "magnifyingglass")
+                        .labelStyle(.iconOnly)
+                }
+                .buttonStyle(.glass)
             }
 
             PlayerControlsView(

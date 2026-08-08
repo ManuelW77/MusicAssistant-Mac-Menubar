@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 import MAMenubarLib
 
@@ -50,18 +49,19 @@ struct SettingsView: View {
             tokenText = appState.settings.accessToken ?? ""
             launchAtLoginEnabled = LaunchAtLogin.isEnabled
             // Als LSUIElement-App hat der Prozess standardmäßig keine Fokus-/
-            // Vordergrund-Rechte; kurzzeitig auf .regular umschalten, damit
-            // das Fenster wirklich key/aktiv wird (sonst landet es unfokussiert
-            // hinter anderen Fenstern). SettingsLink öffnet das Fenster, kümmert
-            // sich aber nicht selbst um App-Aktivierung.
-            NSApp.setActivationPolicy(.regular)
-            NSApp.activate(ignoringOtherApps: true)
+            // Vordergrund-Rechte; WindowActivation schaltet kurzzeitig auf
+            // .regular um, damit das Fenster wirklich key/aktiv wird (sonst
+            // landet es unfokussiert hinter anderen Fenstern). Referenzgezählt,
+            // damit ein gleichzeitig offenes Suche-Fenster nicht beeinträchtigt
+            // wird. SettingsLink öffnet das Fenster, kümmert sich aber nicht
+            // selbst um App-Aktivierung.
+            WindowActivation.windowDidAppear()
             Task { await checkForUpdates() }
         }
         .onDisappear {
             // Wieder zur reinen Menüleisten-App ohne Dock-Icon zurückschalten,
-            // sobald das Settings-Fenster geschlossen wird.
-            NSApp.setActivationPolicy(.accessory)
+            // sobald keine Fenster mehr offen sind (siehe WindowActivation).
+            WindowActivation.windowDidDisappear()
         }
     }
 

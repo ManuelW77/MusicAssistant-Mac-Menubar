@@ -27,6 +27,7 @@ public final class AppState {
     public private(set) var connectionStatus: ConnectionStatus = .disconnected
     public private(set) var players: [MAPlayer] = []
     public private(set) var playlists: [Playlist] = []
+    public private(set) var musicProviders: [ProviderInfo] = []
 
     public var selectedPlayerID: String? {
         didSet {
@@ -47,6 +48,7 @@ public final class AppState {
     private var client: MassWebSocketClient?
     private var supervisorTask: Task<Void, Never>?
     private var reconnectAttempt = 0
+    private var providerIconCache: [String: String] = [:]
 
     private static let backoffSchedule: [Double] = [1, 2, 4, 8, 16, 30]
 
@@ -116,6 +118,7 @@ public final class AppState {
         switch event.event {
         case .playerAdded, .playerUpdated:
             guard let data = event.data, let player = try? data.decode(MAPlayer.self) else { return }
+            logCurrentMediaDebugInfo(for: player)
             if let index = players.firstIndex(where: { $0.playerId == player.playerId }) {
                 players[index] = player
             } else {
@@ -134,12 +137,26 @@ public final class AppState {
         do {
             let list: [MAPlayer] = try await client.send("players/all", args: NoArgs())
             players = list
+            for player in list {
+                logCurrentMediaDebugInfo(for: player)
+            }
             if selectedPlayerID == nil {
                 selectedPlayerID = settings.allowedPlayerIDs.first ?? list.first?.playerId
             }
         } catch {
             connectionStatus = .error("Player-Liste konnte nicht geladen werden: \(error)")
         }
+    }
+
+    // Temporäre Diagnose, um zu klären, ob der Server duration/elapsedTime für
+    // currentMedia überhaupt befüllt (Grundlage für die Fortschrittsanzeige im
+    // Cover) — läuft direkt beim normalen Xcode-Run mit, kein separates CLI-Tool
+    // mit eigenem (langsamem) Build nötig.
+    private func logCurrentMediaDebugInfo(for player: MAPlayer) {
+        guard let media = player.currentMedia else { return }
+        let durationText = media.duration.map { "\($0)" } ?? "nil"
+        let elapsedText = media.elapsedTime.map { "\($0)" } ?? "nil"
+        print("AppState: \(player.name) — duration=\(durationText) elapsed=\(elapsedText)")
     }
 
     public func playPause() { sendPlayerCommand("players/cmd/play_pause") }
@@ -302,5 +319,97 @@ public final class AppState {
             "player_queues/play_media",
             args: PlayMediaArgs(queueId: playerId, media: media, option: "replace")
         )
+    }
+
+    public enum SearchError: Error, CustomStringConvertible, Sendable {
+        case noClient
+        case noPlayer
+
+        public var description: String {
+            switch self {
+            case .noClient: return "Nicht mit Music Assistant verbunden"
+            case .noPlayer: return "Kein Player ausgewählt"
+            }
+        }
+    }
+
+    /// Durchsucht die Bibliothek/Provider nach den gewählten Kategorien
+    /// (Default: Titel/Alben/Playlists/Interpreten, siehe SearchArgs).
+    /// `providers`: nil durchsucht alle Quellen, ein einzelnes Element
+    /// schränkt auf genau diese Provider-Domain ein (Quellen-Dropdown).
+    public func search(
+        query: String,
+        mediaTypes: [String] = ["track", "album", "playlist", "artist"],
+        providers: [String]? = nil
+    ) async throws -> SearchResultsInfo {
+        guard let client else { throw SearchError.noClient }
+        return try await client.send(
+            "music/search",
+            args: SearchArgs(searchQuery: query, mediaTypes: mediaTypes, providers: providers)
+        )
+    }
+
+    /// Lädt die konfigurierten Musik-Provider (für das Quellen-Dropdown der Suche).
+    public func loadMusicProviders() async throws {
+        guard let client else { throw SearchError.noClient }
+        musicProviders = try await client.send("providers", args: ProvidersArgs(providerType: "music"))
+    }
+
+    /// Ersetzt die Queue des gewählten Players durch die übergebene URI und
+    /// startet sie sofort. Generische Version des letzten Schritts von
+    /// startRadio(), hier für beliebige Titel/Alben/Playlists/Interpreten aus
+    /// der Suche/dem Playlist-Browser.
+    public func play(uri: String) async throws {
+        guard let client else { throw SearchError.noClient }
+        guard let playerId = selectedPlayerID else { throw SearchError.noPlayer }
+        try await client.sendRaw(
+            "player_queues/play_media",
+            args: PlayMediaArgs(queueId: playerId, media: [uri], option: "replace")
+        )
+    }
+
+    /// Hängt die übergebene URI ans Ende der Queue des gewählten Players an,
+    /// ohne die laufende Wiedergabe zu unterbrechen.
+    public func enqueue(uri: String) async throws {
+        guard let client else { throw SearchError.noClient }
+        guard let playerId = selectedPlayerID else { throw SearchError.noPlayer }
+        try await client.sendRaw(
+            "player_queues/play_media",
+            args: PlayMediaArgs(queueId: playerId, media: [uri], option: "add")
+        )
+    }
+
+    /// Lädt die Titel der übergebenen Playlist (Drill-down im Suche-Fenster).
+    public func loadPlaylistTracks(_ playlist: Playlist) async throws -> [Track] {
+        guard let client else { throw SearchError.noClient }
+        return try await client.send(
+            "music/playlists/playlist_tracks",
+            args: SimilarTracksArgs(itemId: playlist.itemId, providerInstanceIdOrDomain: playlist.provider)
+        )
+    }
+
+    /// Lädt die Titel des übergebenen Albums (Drill-down im Suche-Fenster).
+    public func loadAlbumTracks(_ album: Album) async throws -> [Track] {
+        guard let client else { throw SearchError.noClient }
+        return try await client.send(
+            "music/albums/album_tracks",
+            args: SimilarTracksArgs(itemId: album.itemId, providerInstanceIdOrDomain: album.provider)
+        )
+    }
+
+    /// Lädt das Marken-Icon eines Providers (Data-URI, direkt vom Server
+    /// gerendert) für die Provider-Badge auf Playlist-Zeilen. In-Memory
+    /// gecacht, damit dieselbe Domain nicht bei jedem Zeilen-Render erneut
+    /// abgefragt wird.
+    public func providerIcon(domain: String) async throws -> String? {
+        if let cached = providerIconCache[domain] {
+            return cached
+        }
+        guard let client else { throw SearchError.noClient }
+        let dataURI: String? = try await client.send("providers/icon", args: ProviderIconArgs(provider: domain))
+        if let dataURI {
+            providerIconCache[domain] = dataURI
+        }
+        return dataURI
     }
 }

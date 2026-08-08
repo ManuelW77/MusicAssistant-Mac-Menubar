@@ -78,11 +78,50 @@ public struct PlayMediaArgs: Encodable, Sendable {
     }
 }
 
+/// Ursprünglich nur für music/tracks/similar_tracks angelegt, mittlerweile auch
+/// für music/playlists/playlist_tracks und music/albums/album_tracks
+/// wiederverwendet — alle drei Commands teilen sich exakt dieselben zwei
+/// Pflichtparameter (item_id/provider_instance_id_or_domain).
 public struct SimilarTracksArgs: Encodable, Sendable {
     public let itemId: String
     public let providerInstanceIdOrDomain: String
     public init(itemId: String, providerInstanceIdOrDomain: String) {
         self.itemId = itemId
         self.providerInstanceIdOrDomain = providerInstanceIdOrDomain
+    }
+}
+
+public struct SearchArgs: Encodable, Sendable {
+    public let searchQuery: String
+    public let mediaTypes: [String]
+    // nil → Feld wird beim Encoden weggelassen (Swifts synthesize-Encode nutzt
+    // encodeIfPresent für Optionals) → entspricht Pythons Default None ("alle
+    // Quellen durchsuchen"). Ein einzelnes Element schränkt auf genau diese
+    // Provider-Domain/Instance-ID ein.
+    public let providers: [String]?
+    public init(
+        searchQuery: String,
+        mediaTypes: [String] = ["track", "album", "playlist", "artist"],
+        providers: [String]? = nil
+    ) {
+        self.searchQuery = searchQuery
+        self.mediaTypes = mediaTypes
+        self.providers = providers
+    }
+}
+
+public struct ProviderIconArgs: Encodable, Sendable {
+    public let provider: String
+    public let variant: String
+    public init(provider: String, variant: String = "default") {
+        self.provider = provider
+        self.variant = variant
+    }
+}
+
+public struct ProvidersArgs: Encodable, Sendable {
+    public let providerType: String
+    public init(providerType: String) {
+        self.providerType = providerType
     }
 }

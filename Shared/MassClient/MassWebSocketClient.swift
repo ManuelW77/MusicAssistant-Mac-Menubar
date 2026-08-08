@@ -7,7 +7,8 @@ import Foundation
 /// Request:  {"message_id": "...", "command": "...", "args": {...}}
 /// Erfolg:   {"message_id": "...", "result": ...}  (ggf. über mehrere
 ///           Nachrichten mit "partial": true verteilt, bei Listen-Commands)
-/// Fehler:   {"message_id": "...", "error_code": ..., "error": "..."}
+/// Fehler:   {"message_id": "...", "error_code": ..., "details": "..."} (verifiziert
+///           gegen echten Server: der Feldname ist "details", nicht "error")
 /// Event:    {"event": "...", "object_id": "...", "data": {...}}
 public actor MassWebSocketClient {
     public enum ClientError: Error, CustomStringConvertible, Sendable {
