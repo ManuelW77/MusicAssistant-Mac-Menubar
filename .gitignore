@@ -3,6 +3,9 @@
 .swiftpm/
 Package.resolved
 
+# per `make app` erzeugtes .app-Bundle
+dist/
+
 # Xcode (falls das Package später in Xcode geöffnet wird)
 *.xcodeproj
 *.xcworkspace
