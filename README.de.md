@@ -21,6 +21,16 @@ Natives macOS-Menüleisten-Tool für [Music Assistant](https://www.music-assista
 - Automatische Prüfung auf neue Versionen (GitHub Releases).
 - Reine Menüleisten-App ohne Dock-Icon (`LSUIElement`).
 
+## Suche
+
+Klick auf das Lupen-Icon im Popover öffnet ein eigenes Such-Fenster: durchsucht Titel, Alben, Playlists und Interpreten gleichzeitig, mit Typ-Filtern und einem Provider-Filter.
+
+<img src="Screenshots/SCR-20260809-kbjk.png" alt="Such-Fenster" width="480">
+
+Der zweite Tab listet alle Playlists der eigenen Bibliothek direkt auf, ohne eine Suchanfrage eingeben zu müssen.
+
+<img src="Screenshots/SCR-20260809-kblk.png" alt="Such-Fenster – Playlists-Tab" width="480">
+
 ## Konfiguration
 
 Beim ersten Start über Rechtsklick auf das Menüleisten-Icon → „Einstellungen…":
@@ -54,6 +64,15 @@ brew install --cask ma-menubar
 ```
 
 Die Cask-Formel (`Casks/ma-menubar.rb`) liegt bewusst im Hauptrepo statt in einem separaten `homebrew-*`-Tap-Repo — dafür ist beim `brew tap` die volle Repo-URL statt der Kurzform nötig. Sie wird bei jedem Release automatisch auf die neue Version/den neuen SHA256 aktualisiert (`.github/workflows/release.yml`).
+
+## Updates
+
+Die App prüft automatisch alle 24 Stunden sowie einmal beim Start gegen die GitHub-Releases-API, ob eine neue Version verfügbar ist, zusätzlich auf Wunsch über den Button „Nach Updates suchen“ in Einstellungen → Allgemein. Wird eine neuere Version gefunden, gibt es dafür eine native macOS-Benachrichtigung (Klick darauf öffnet direkt die Einstellungen), zusätzlich erscheint dort weiterhin ein Link „Version X.Y.Z verfügbar“ — benachrichtigt wird nur einmal pro Version, nicht bei jedem Hintergrund-Check erneut. Die App lädt oder installiert nie von sich aus etwas.
+
+Wie man tatsächlich an die neue Version kommt, hängt von der Installationsart ab:
+
+- **DMG**: das neue `.dmg` von der [Releases-Seite](https://github.com/ManuelW77/MusicAssistant-Mac-Menubar/releases/latest) herunterladen und die App wie oben beschrieben in `/Applications` ersetzen.
+- **Homebrew**: `brew update` aktualisiert die Tap-Metadaten (u.a. `Casks/ma-menubar.rb`), danach installiert `brew upgrade --cask ma-menubar` die neue Version. `brew update` allein aktualisiert nichts — Homebrew hat standardmäßig keinen automatischen Hintergrund-Updater, das muss manuell ausgeführt (oder selbst per Cron/Launchd eingerichtet) werden.
 
 ## Voraussetzungen
 

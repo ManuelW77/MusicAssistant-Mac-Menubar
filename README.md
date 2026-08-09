@@ -21,6 +21,16 @@ A native macOS menu bar client for [Music Assistant](https://www.music-assistant
 - Automatic check for new releases (GitHub Releases).
 - Pure menu bar app with no Dock icon (`LSUIElement`).
 
+## Search
+
+Click the magnifying glass in the popover to open a dedicated search window: search across tracks, albums, playlists and artists at once, with type filters and a provider filter.
+
+<img src="Screenshots/SCR-20260809-kbjk.png" alt="Search window" width="480">
+
+The second tab lists all your library playlists directly, without typing a query.
+
+<img src="Screenshots/SCR-20260809-kblk.png" alt="Search window – Playlists tab" width="480">
+
 ## Configuration
 
 On first launch, right-click the menu bar icon → "Settings…":
@@ -54,6 +64,15 @@ brew install --cask ma-menubar
 ```
 
 The cask formula (`Casks/ma-menubar.rb`) lives deliberately in the main repo rather than a separate `homebrew-*` tap repo — that's why `brew tap` needs the full repo URL instead of the short form. It's automatically updated to the new version/SHA256 on every release (`.github/workflows/release.yml`).
+
+## Updates
+
+The app checks for new releases automatically every 24 hours and once on launch (against the GitHub Releases API), and also on demand via the "Check for Updates" button in Settings → General. If a newer version is found, you get a native macOS notification (click it to jump straight to Settings) and it's also shown there as a "Version X.Y.Z available" link — you're only notified once per version, not on every background check. The app never downloads or installs anything by itself.
+
+How you actually get the new version depends on how you installed it:
+
+- **DMG**: download the new `.dmg` from the [releases page](https://github.com/ManuelW77/MusicAssistant-Mac-Menubar/releases/latest) and replace the app in `/Applications` as described above.
+- **Homebrew**: `brew update` refreshes the tap metadata (incl. `Casks/ma-menubar.rb`), then `brew upgrade --cask ma-menubar` installs the new version. `brew update` alone does not upgrade anything — Homebrew has no automatic background updater by default, so this has to be run manually (or scheduled yourself).
 
 ## Requirements
 
