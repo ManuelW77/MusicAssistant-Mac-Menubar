@@ -126,6 +126,16 @@ struct SettingsView: View {
                 Label(L10n.versionAvailable(info.latestVersion, appState.uiLanguage), systemImage: "arrow.down.circle.fill")
             }
             .font(.caption)
+
+            if let notes = info.releaseNotes, !notes.isEmpty {
+                ScrollView {
+                    Text(notes)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxHeight: 80)
+            }
         } else if appState.lastUpdateCheckDate != nil {
             Label(appState.t(.upToDate), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)

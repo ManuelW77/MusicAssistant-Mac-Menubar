@@ -10,11 +10,13 @@ public enum UpdateChecker {
     public struct UpdateInfo: Sendable, Equatable {
         public let latestVersion: String
         public let url: URL
+        public let releaseNotes: String?
     }
 
     private struct GitHubRelease: Decodable {
         let tagName: String
         let htmlUrl: String
+        let body: String?
     }
 
     /// Liefert Infos zur neuesten Release, falls sie neuer als `currentVersion`
@@ -42,7 +44,7 @@ public enum UpdateChecker {
 
         let latestVersion = release.tagName.hasPrefix("v") ? String(release.tagName.dropFirst()) : release.tagName
         guard isNewer(latestVersion, than: currentVersion) else { return nil }
-        return UpdateInfo(latestVersion: latestVersion, url: releaseURL)
+        return UpdateInfo(latestVersion: latestVersion, url: releaseURL, releaseNotes: release.body)
     }
 
     /// Rein numerischer SemVer-Vergleich (X.Y.Z, fehlende Teile zählen als 0).

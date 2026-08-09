@@ -99,10 +99,18 @@ jobs:
           mkdir -p out
           mv "dist/MA Menubar.dmg" "out/MA-Menubar-${REF_NAME}.dmg"
 
+      - name: Release-Notes aus Tag extrahieren
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git tag -l --format='%(contents)' "$REF_NAME" > "$RUNNER_TEMP/release-notes.md"
+
       - name: GitHub Release erstellen
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: out/*.dmg
+          body_path: ${{ runner.temp }}/release-notes.md
 
       - name: Homebrew-Cask-Formel aktualisieren
         env:

@@ -91,7 +91,8 @@ fi
 git push origin main
 git push github main
 
-git tag -a "$NEW_TAG" -m "$NEW_TAG"
+CHANGELOG=$(git log "${LATEST_TAG}..HEAD" --no-merges --pretty=format:'- %s')
+git tag -a "$NEW_TAG" -m "$NEW_TAG" -m "$CHANGELOG"
 git push origin "$NEW_TAG"
 git push github "$NEW_TAG"
 
