@@ -49,6 +49,7 @@ Download the latest version from the [GitHub releases page](https://github.com/M
 
 ```
 brew tap ManuelW77/musicassistant-mac-menubar https://github.com/ManuelW77/MusicAssistant-Mac-Menubar
+brew trust manuelw77/musicassistant-mac-menubar
 brew install --cask ma-menubar
 ```
 
