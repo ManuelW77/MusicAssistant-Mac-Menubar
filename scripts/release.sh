@@ -28,6 +28,17 @@ if [ -n "$(git status --porcelain)" ]; then
     exit 1
 fi
 
+# github/main kann durch den Release-Workflow einen automatischen
+# Cask-Formel-Commit erhalten haben (.github/workflows/release.yml), der nie
+# zurück nach origin (Gitea) bzw. in die lokale main-Historie fließt (der
+# Workflow läuft nur auf GitHub Actions, ohne Gitea-Zugang). Ohne Sync würde
+# der spätere `git push github main` als Non-Fast-Forward fehlschlagen.
+git fetch github main --quiet
+if ! git merge-base --is-ancestor github/main main; then
+    echo "main liegt hinter github/main zurück (vermutlich automatischer Cask-Formel-Commit) – synchronisiere..."
+    git merge github/main --no-edit
+fi
+
 LATEST_TAG=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n1)
 LATEST_TAG="${LATEST_TAG:-v0.0.0}"
 LATEST_VERSION="${LATEST_TAG#v}"
