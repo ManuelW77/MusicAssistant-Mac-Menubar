@@ -18,6 +18,15 @@ Kleines natives macOS-Menüleisten-Tool für [Music Assistant](https://www.music
 - Xcode mit swift-tools-version 6.2+
 - Ein laufender Music-Assistant-Server sowie ein Long-Lived Access Token (MA-Web-UI → Profil → Access Tokens)
 
+## Installation via Homebrew
+
+```
+brew tap ManuelW77/musicassistant-mac-menubar https://github.com/ManuelW77/MusicAssistant-Mac-Menubar
+brew install --cask ma-menubar
+```
+
+Die Cask-Formel (`Casks/ma-menubar.rb`) liegt bewusst im Hauptrepo statt in einem separaten `homebrew-*`-Tap-Repo — dafür ist beim `brew tap` die volle Repo-URL statt der Kurzform nötig. Sie wird bei jedem Release automatisch auf die neue Version/den neuen SHA256 aktualisiert (`.github/workflows/release.yml`).
+
 ## Projektstruktur
 
 ```
