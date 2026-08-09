@@ -4,7 +4,7 @@
 
 Natives macOS-Menüleisten-Tool für [Music Assistant](https://www.music-assistant.io/) (MA). Steuere deinen aktuell laufenden Player direkt aus der Menüleiste — Cover, Titel/Künstler, Transport-Controls, Lautstärke, Favoriten, Radio, Smart Crossfade, Playlists und eine vollwertige Suche — ohne die MA-Web-UI oder eine Companion-App öffnen zu müssen.
 
-![Menüleisten-Popover](Screenshots/SCR-20260809-jpjt.png)
+<img src="Screenshots/SCR-20260809-jpjt.png" alt="Menüleisten-Popover" width="260">
 
 ## Funktionen
 
@@ -20,6 +20,24 @@ Natives macOS-Menüleisten-Tool für [Music Assistant](https://www.music-assista
 - Automatischer Reconnect mit Backoff, Live-Updates über die MA-WebSocket-Events (kein Polling), Verbindungsstatus-Anzeige im Popover.
 - Automatische Prüfung auf neue Versionen (GitHub Releases).
 - Reine Menüleisten-App ohne Dock-Icon (`LSUIElement`).
+
+## Konfiguration
+
+Beim ersten Start über Rechtsklick auf das Menüleisten-Icon → „Einstellungen…":
+
+1. **Tab „Allgemein"**: optional „Bei Anmeldung starten" aktivieren (nutzt `SMAppService.mainApp` — funktioniert nur aus einem echten `.app`-Bundle, nicht aus dem rohen Debug-Build). App-Sprache wählen (Systemsprache / Deutsch / English). Zeigt außerdem aktuelle Version, Entwickler und GitHub-Link, und prüft beim Öffnen automatisch (sowie über „Nach Updates suchen") gegen die GitHub-Releases-API, ob eine neuere Version verfügbar ist.
+
+   <img src="Screenshots/SCR-20260809-jpnk.png" alt="Einstellungen – Allgemein" width="360">
+
+2. **Tab „Server"**: Server-Basis-URL (z.B. `https://music.example.org`) und Access-Token eintragen, mit „Verbindung testen" prüfen, dann „Speichern".
+
+   <img src="Screenshots/SCR-20260809-jppf.png" alt="Einstellungen – Server" width="360">
+
+3. **Tab „Player"**: Aus den vom Server gemeldeten Playern die gewünschten für den Popover-Picker aktivieren.
+
+   <img src="Screenshots/SCR-20260809-jpwr.png" alt="Einstellungen – Player" width="360">
+
+Server-URL, Access-Token, Player-Whitelist und Sprache liegen in `UserDefaults` (bewusst nicht in der Keychain — der dafür beim allerersten Speichern unvermeidbare "App möchte auf deinen Schlüsselbund zugreifen"-Dialog wurde zugunsten einer reibungslosen Ersteinrichtung vermieden; der Token liegt dadurch unverschlüsselt auf der Platte).
 
 ## Installation
 
@@ -119,24 +137,6 @@ Dafür müssen einmalig folgende Repo-Secrets gesetzt werden (`gh secret set NAM
 | `KEYCHAIN_PASSWORD` | Beliebiges Passwort nur für die temporäre CI-Keychain, z.B. `openssl rand -base64 24` |
 | `DEVELOPER_ID_IDENTITY` | Exakter Identity-String, z.B. `Developer ID Application: Manuel Weiser (TEAMID)` (siehe `security find-identity -v -p codesigning`) |
 | `NOTARY_KEY_ID` / `NOTARY_ISSUER_ID` / `NOTARY_KEY_P8_BASE64` | App Store Connect → Users and Access → Integrations → App Store Connect API: Key erzeugen (Rolle „Developer" reicht), `.p8` einmalig herunterladen und `base64 -i AuthKey_XXXX.p8` |
-
-## Konfiguration
-
-Beim ersten Start über Rechtsklick auf das Menüleisten-Icon → „Einstellungen…":
-
-1. **Tab „Allgemein"**: optional „Bei Anmeldung starten" aktivieren (nutzt `SMAppService.mainApp` — funktioniert nur aus einem echten `.app`-Bundle, nicht aus dem rohen Debug-Build). App-Sprache wählen (Systemsprache / Deutsch / English). Zeigt außerdem aktuelle Version, Entwickler und GitHub-Link, und prüft beim Öffnen automatisch (sowie über „Nach Updates suchen") gegen die GitHub-Releases-API, ob eine neuere Version verfügbar ist.
-
-   ![Einstellungen – Allgemein](Screenshots/SCR-20260809-jpnk.png)
-
-2. **Tab „Server"**: Server-Basis-URL (z.B. `https://music.example.org`) und Access-Token eintragen, mit „Verbindung testen" prüfen, dann „Speichern".
-
-   ![Einstellungen – Server](Screenshots/SCR-20260809-jppf.png)
-
-3. **Tab „Player"**: Aus den vom Server gemeldeten Playern die gewünschten für den Popover-Picker aktivieren.
-
-   ![Einstellungen – Player](Screenshots/SCR-20260809-jpwr.png)
-
-Server-URL, Access-Token, Player-Whitelist und Sprache liegen in `UserDefaults` (bewusst nicht in der Keychain — der dafür beim allerersten Speichern unvermeidbare "App möchte auf deinen Schlüsselbund zugreifen"-Dialog wurde zugunsten einer reibungslosen Ersteinrichtung vermieden; der Token liegt dadurch unverschlüsselt auf der Platte).
 
 ## Protokollverifikation gegen einen echten Server
 

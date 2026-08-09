@@ -4,7 +4,7 @@
 
 A native macOS menu bar client for [Music Assistant](https://www.music-assistant.io/) (MA). Control your currently playing player right from the menu bar — cover art, title/artist, transport controls, volume, favorites, radio, smart crossfade, playlists, and a full search — without opening the MA web UI or a companion app.
 
-![Menu bar popover](Screenshots/SCR-20260809-jpjt.png)
+<img src="Screenshots/SCR-20260809-jpjt.png" alt="Menu bar popover" width="260">
 
 ## Features
 
@@ -20,6 +20,24 @@ A native macOS menu bar client for [Music Assistant](https://www.music-assistant
 - Automatic reconnect with backoff, live updates via MA WebSocket events (no polling), connection status indicator in the popover.
 - Automatic check for new releases (GitHub Releases).
 - Pure menu bar app with no Dock icon (`LSUIElement`).
+
+## Configuration
+
+On first launch, right-click the menu bar icon → "Settings…":
+
+1. **"General" tab**: optionally enable "Start at Login" (uses `SMAppService.mainApp` — only works from a real `.app` bundle, not from the raw debug build). Choose the app language (System / Deutsch / English). Also shows the current version, developer, and GitHub link, and automatically checks (on open, and via "Check for Updates") against the GitHub Releases API whether a newer version is available.
+
+   <img src="Screenshots/SCR-20260809-jpnk.png" alt="Settings – General" width="360">
+
+2. **"Server" tab**: enter the server base URL (e.g. `https://music.example.org`) and access token, verify with "Test Connection", then "Save".
+
+   <img src="Screenshots/SCR-20260809-jppf.png" alt="Settings – Server" width="360">
+
+3. **"Player" tab**: from the players reported by the server, enable the ones you want in the popover picker.
+
+   <img src="Screenshots/SCR-20260809-jpwr.png" alt="Settings – Player" width="360">
+
+Server URL, access token, player whitelist, and language live in `UserDefaults` (deliberately not in the Keychain — the unavoidable "app wants to access your keychain" dialog on the very first save was traded away in favor of a friction-free first run; the token sits unencrypted on disk as a result).
 
 ## Installation
 
@@ -119,24 +137,6 @@ For this, the following repo secrets need to be set once (`gh secret set NAME --
 | `KEYCHAIN_PASSWORD` | Any password, only used for the temporary CI keychain, e.g. `openssl rand -base64 24` |
 | `DEVELOPER_ID_IDENTITY` | The exact identity string, e.g. `Developer ID Application: Manuel Weiser (TEAMID)` (see `security find-identity -v -p codesigning`) |
 | `NOTARY_KEY_ID` / `NOTARY_ISSUER_ID` / `NOTARY_KEY_P8_BASE64` | App Store Connect → Users and Access → Integrations → App Store Connect API: create a key (role "Developer" is sufficient), download the `.p8` once and `base64 -i AuthKey_XXXX.p8` |
-
-## Configuration
-
-On first launch, right-click the menu bar icon → "Settings…":
-
-1. **"General" tab**: optionally enable "Start at Login" (uses `SMAppService.mainApp` — only works from a real `.app` bundle, not from the raw debug build). Choose the app language (System / Deutsch / English). Also shows the current version, developer, and GitHub link, and automatically checks (on open, and via "Check for Updates") against the GitHub Releases API whether a newer version is available.
-
-   ![Settings – General](Screenshots/SCR-20260809-jpnk.png)
-
-2. **"Server" tab**: enter the server base URL (e.g. `https://music.example.org`) and access token, verify with "Test Connection", then "Save".
-
-   ![Settings – Server](Screenshots/SCR-20260809-jppf.png)
-
-3. **"Player" tab**: from the players reported by the server, enable the ones you want in the popover picker.
-
-   ![Settings – Player](Screenshots/SCR-20260809-jpwr.png)
-
-Server URL, access token, player whitelist, and language live in `UserDefaults` (deliberately not in the Keychain — the unavoidable "app wants to access your keychain" dialog on the very first save was traded away in favor of a friction-free first run; the token sits unencrypted on disk as a result).
 
 ## Protocol verification against a real server
 
