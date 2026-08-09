@@ -125,3 +125,41 @@ public struct ProvidersArgs: Encodable, Sendable {
         self.providerType = providerType
     }
 }
+
+/// Bewusst nicht PlayerIDArgs wiederverwendet: der Server-Parametername heißt
+/// hier queue_id, nicht player_id — auch wenn der Wert identisch ist
+/// (queue_id == player_id, siehe player_queues-Controller-README).
+public struct QueueIDArgs: Encodable, Sendable {
+    public let queueId: String
+    public init(queueId: String) { self.queueId = queueId }
+}
+
+/// Für `config/players/save`. Crossfade ist weder der Bool-Befehl
+/// `player_queues/crossfade` noch das Queue-Config-Entry `crossfade_mode`
+/// (beide liefern auf diesem Server "Invalid command") — dieser Server läuft
+/// auf einem Stand vor music-assistant/server#4373 (21.06.2026), das
+/// Crossfade von einer Pro-Player- zu einer Pro-Queue-Einstellung verschoben
+/// hat. Auf diesem älteren Stand ist Crossfade noch ein Config-Entry
+/// `smart_fades_mode` (String-Enum `smart_crossfade`/`standard_crossfade`/
+/// `disabled`) auf der PLAYER-Konfiguration — verifiziert im Quellcode des
+/// Commits unmittelbar vor #4373 (`controllers/config.py`,
+/// `_get_default_player_config_entries`).
+public struct PlayerConfigSaveArgs: Encodable, Sendable {
+    public let playerId: String
+    public let values: [String: String]
+    public init(playerId: String, values: [String: String]) {
+        self.playerId = playerId
+        self.values = values
+    }
+}
+
+/// Für `config/players/get_value` — Debug-Rückkanal, um nach dem Speichern
+/// zu bestätigen, was der Server tatsächlich persistiert hat.
+public struct PlayerConfigGetValueArgs: Encodable, Sendable {
+    public let playerId: String
+    public let key: String
+    public init(playerId: String, key: String) {
+        self.playerId = playerId
+        self.key = key
+    }
+}

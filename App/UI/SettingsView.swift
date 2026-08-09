@@ -27,13 +27,13 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             generalTab
-                .tabItem { Label("Allgemein", systemImage: "gearshape") }
+                .tabItem { Label(appState.t(.generalTabLabel), systemImage: "gearshape") }
 
             serverTab
-                .tabItem { Label("Server", systemImage: "server.rack") }
+                .tabItem { Label("Server", systemImage: "server.rack") } // "Server" ist DE/EN identisch
 
             playerTab
-                .tabItem { Label("Player", systemImage: "hifispeaker") }
+                .tabItem { Label("Player", systemImage: "hifispeaker") } // "Player" ist DE/EN identisch
         }
         .frame(width: 440, height: 420)
         .onAppear {
@@ -60,10 +60,30 @@ struct SettingsView: View {
         }
     }
 
+    private var languageBinding: Binding<AppLanguage> {
+        Binding(
+            get: { appState.settings.language },
+            set: { appState.settings.language = $0 }
+        )
+    }
+
+    private func languageDisplayName(_ language: AppLanguage) -> String {
+        switch language {
+        case .de: return "Deutsch"
+        case .en: return "English"
+        case .system: return appState.t(.systemLanguageOption)
+        }
+    }
+
     private var generalTab: some View {
         Form {
             Section {
-                Toggle("Bei Anmeldung starten", isOn: launchAtLoginBinding)
+                Toggle(appState.t(.startAtLogin), isOn: launchAtLoginBinding)
+                Picker(appState.t(.languageLabel), selection: languageBinding) {
+                    ForEach(AppLanguage.allCases, id: \.self) { language in
+                        Text(languageDisplayName(language)).tag(language)
+                    }
+                }
             } footer: {
                 if let launchAtLoginError {
                     Text(launchAtLoginError)
@@ -72,13 +92,13 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Über") {
+            Section(appState.t(.about)) {
                 LabeledContent("Version", value: appVersion)
-                LabeledContent("Entwickler", value: "Manuel Weiser")
-                Link("GitHub-Repository", destination: Self.repositoryURL)
+                LabeledContent(appState.t(.developer), value: "Manuel Weiser")
+                Link(appState.t(.githubRepo), destination: Self.repositoryURL)
 
                 HStack {
-                    Button("Nach Updates suchen") {
+                    Button(appState.t(.checkForUpdates)) {
                         Task { await appState.checkForUpdate() }
                     }
                     .buttonStyle(.glass)
@@ -103,11 +123,11 @@ struct SettingsView: View {
             EmptyView()
         } else if let info = appState.updateInfo {
             Link(destination: info.url) {
-                Label("Version \(info.latestVersion) verfügbar", systemImage: "arrow.down.circle.fill")
+                Label(L10n.versionAvailable(info.latestVersion, appState.uiLanguage), systemImage: "arrow.down.circle.fill")
             }
             .font(.caption)
         } else if appState.lastUpdateCheckDate != nil {
-            Label("Aktuell", systemImage: "checkmark.circle.fill")
+            Label(appState.t(.upToDate), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
                 .font(.caption)
         }
@@ -122,7 +142,7 @@ struct SettingsView: View {
                     launchAtLoginEnabled = newValue
                     launchAtLoginError = nil
                 } catch {
-                    launchAtLoginError = "Fehler: \(error.localizedDescription)"
+                    launchAtLoginError = L10n.genericError(error.localizedDescription, appState.uiLanguage)
                 }
             }
         )
@@ -131,17 +151,17 @@ struct SettingsView: View {
     private var serverTab: some View {
         Form {
             Section {
-                TextField("Server-URL", text: $serverURLText, prompt: Text("https://music.example.org"))
+                TextField(appState.t(.serverURL), text: $serverURLText, prompt: Text("https://music.example.org"))
                 SecureField("Token", text: $tokenText, prompt: Text("Long-Lived Access Token"))
             } footer: {
-                Text("Der Token wird in der Music-Assistant-Web-UI unter Profil → Access Tokens erzeugt und lokal in den App-Einstellungen gespeichert.")
+                Text(appState.t(.tokenFooter))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Section {
                 HStack {
-                    Button("Verbindung testen") {
+                    Button(appState.t(.testConnection)) {
                         testConnection()
                     }
                     .buttonStyle(.glass)
@@ -155,7 +175,7 @@ struct SettingsView: View {
                     testStatusLabel
                 }
 
-                Button("Speichern") {
+                Button(appState.t(.save)) {
                     save()
                 }
                 .buttonStyle(.glassProminent)
@@ -172,7 +192,7 @@ struct SettingsView: View {
         case .idle, .testing:
             EmptyView()
         case .success(let count):
-            Label("Verbunden – \(count) Player gefunden", systemImage: "checkmark.circle.fill")
+            Label(L10n.connectedPlayersFound(count, appState.uiLanguage), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
                 .font(.caption)
         case .failure(let message):
@@ -187,7 +207,7 @@ struct SettingsView: View {
         @Bindable var appState = appState
 
         return VStack(alignment: .leading, spacing: 8) {
-            Text("Wähle aus, welche Player im Menüleisten-Popover zur Auswahl stehen sollen.")
+            Text(appState.t(.selectPlayersHint))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -195,9 +215,9 @@ struct SettingsView: View {
 
             if players.isEmpty {
                 ContentUnavailableView(
-                    "Keine Player geladen",
+                    appState.t(.noPlayersLoaded),
                     systemImage: "hifispeaker.and.homepod",
-                    description: Text("Verbinde dich zuerst über den Server-Tab oder lade die Liste neu.")
+                    description: Text(appState.t(.connectFirstHint))
                 )
             } else {
                 List(players) { player in
@@ -223,7 +243,7 @@ struct SettingsView: View {
                 }
             }
 
-            Button("Player neu laden") {
+            Button(appState.t(.reloadPlayers)) {
                 Task { await appState.reloadPlayers() }
             }
             .buttonStyle(.glass)
@@ -234,7 +254,7 @@ struct SettingsView: View {
 
     private func testConnection() {
         guard let url = URL(string: serverURLText) else {
-            testState = .failure("Ungültige URL")
+            testState = .failure(appState.t(.invalidURL))
             return
         }
         testState = .testing

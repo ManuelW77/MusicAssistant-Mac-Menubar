@@ -15,11 +15,12 @@ struct FavoriteButtonView: View {
         Button {
             toggle()
         } label: {
-            Label("Favorit", systemImage: isFavorite == true ? "heart.fill" : "heart")
+            Label(appState.t(.favorite), systemImage: isFavorite == true ? "heart.fill" : "heart")
                 .labelStyle(.iconOnly)
         }
         .buttonStyle(.glass)
         .tint(isFavorite == true ? .red : nil)
+        .help(isFavorite == true ? appState.t(.removeFromFavorites) : appState.t(.addToFavorites))
         .disabled(currentURI == nil || isWorking)
         .task(id: currentURI) {
             isFavorite = try? await appState.loadFavoriteStatus()

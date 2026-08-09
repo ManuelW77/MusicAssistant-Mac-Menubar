@@ -40,7 +40,7 @@ struct AddToPlaylistView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Zu Playlist hinzufügen")
+            Text(appState.t(.addToPlaylist))
                 .font(.headline)
             Text(trackDescription)
                 .font(.caption)
@@ -50,7 +50,7 @@ struct AddToPlaylistView: View {
     }
 
     private var trackDescription: String {
-        guard let media = appState.selectedPlayer?.currentMedia else { return "Kein Titel" }
+        guard let media = appState.selectedPlayer?.currentMedia else { return appState.t(.noTrack) }
         return "\(media.title ?? "-") – \(media.artist ?? "-")"
     }
 
@@ -66,7 +66,7 @@ struct AddToPlaylistView: View {
                 Label(message, systemImage: "xmark.circle.fill")
                     .foregroundStyle(.red)
                     .font(.caption)
-                Button("Erneut versuchen") {
+                Button(appState.t(.retry)) {
                     Task { await load() }
                 }
                 .buttonStyle(.glass)
@@ -74,9 +74,9 @@ struct AddToPlaylistView: View {
         case .loaded:
             if appState.playlists.isEmpty {
                 ContentUnavailableView(
-                    "Keine Playlists gefunden",
+                    appState.t(.noPlaylistsFound),
                     systemImage: "music.note.list",
-                    description: Text("Leg unten eine neue Playlist an.")
+                    description: Text(appState.t(.createPlaylistHint))
                 )
                 .frame(height: 120)
             } else {
@@ -97,8 +97,8 @@ struct AddToPlaylistView: View {
 
     private var createSection: some View {
         HStack {
-            TextField("Neue Playlist…", text: $newPlaylistName)
-            Button("Erstellen") {
+            TextField(appState.t(.newPlaylistPlaceholder), text: $newPlaylistName)
+            Button(appState.t(.create)) {
                 Task { await createAndAdd() }
             }
             .buttonStyle(.glassProminent)
@@ -112,7 +112,7 @@ struct AddToPlaylistView: View {
         case .idle, .working:
             EmptyView()
         case .created(let name):
-            Label("Zu „\(name)“ hinzugefügt", systemImage: "checkmark.circle.fill")
+            Label(L10n.addedToPlaylist(name, appState.uiLanguage), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
                 .font(.caption)
         case .failed(let message):

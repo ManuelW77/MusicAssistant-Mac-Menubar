@@ -11,6 +11,8 @@ struct MediaDetailView: View {
     @State private var tracks: [Track] = []
     @State private var loadState: LoadState = .loading
 
+    @Environment(AppState.self) private var appState
+
     private enum LoadState: Equatable {
         case loading
         case loaded
@@ -25,7 +27,7 @@ struct MediaDetailView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .failed(let message):
                 ContentUnavailableView(
-                    "Titel konnten nicht geladen werden",
+                    appState.t(.tracksLoadFailed),
                     systemImage: "xmark.circle",
                     description: Text(message)
                 )

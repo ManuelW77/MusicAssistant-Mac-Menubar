@@ -30,8 +30,8 @@ struct TrackRowView: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            Button("Abspielen") { play() }
-            Button("Zur Warteschlange hinzufügen") { enqueue() }
+            Button(appState.t(.play)) { play() }
+            Button(appState.t(.addToQueue)) { enqueue() }
         }
     }
 

@@ -24,7 +24,7 @@ struct MAMenubarApp: App {
         // ohne defaultLaunchBehavior(.suppressed) beim App-Start automatisch
         // aufgehen — für eine reine Menüleisten-App unerwünscht, das Fenster
         // soll nur über den Lupen-Button im Popover erscheinen.
-        Window("Suche", id: "search") {
+        Window(appDelegate.appState.t(.search), id: "search") {
             SearchView()
                 .environment(appDelegate.appState)
         }

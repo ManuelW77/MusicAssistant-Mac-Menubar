@@ -26,12 +26,15 @@ struct SearchView: View {
 
         var id: String { rawValue }
 
-        var label: String {
+        // Kein appState-Zugriff in diesem View-lokalen Typ, daher Sprache als
+        // Parameter statt appState.t(...). "Playlists" ist DE/EN identisch
+        // und bleibt bewusst literal (siehe Migrationsplan).
+        func label(_ language: L10n.Language) -> String {
             switch self {
-            case .track: return "Titel"
-            case .album: return "Alben"
+            case .track: return L10n.text(.mediaTypeTrack, language)
+            case .album: return L10n.text(.mediaTypeAlbum, language)
             case .playlist: return "Playlists"
-            case .artist: return "Interpreten"
+            case .artist: return L10n.text(.mediaTypeArtist, language)
             }
         }
     }
@@ -39,7 +42,7 @@ struct SearchView: View {
     var body: some View {
         TabView {
             searchTab
-                .tabItem { Label("Suche", systemImage: "magnifyingglass") }
+                .tabItem { Label(appState.t(.search), systemImage: "magnifyingglass") }
 
             playlistsTab
                 .tabItem { Label("Playlists", systemImage: "music.note.list") }
@@ -57,9 +60,9 @@ struct SearchView: View {
                 Group {
                     if selectedTypes.isEmpty {
                         ContentUnavailableView(
-                            "Keine Kategorie ausgewählt",
+                            appState.t(.noCategorySelected),
                             systemImage: "line.3.horizontal.decrease.circle",
-                            description: Text("Wähle mindestens eine Kategorie oben aus.")
+                            description: Text(appState.t(.selectAtLeastOneCategory))
                         )
                     } else {
                         switch loadState {
@@ -70,7 +73,7 @@ struct SearchView: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         case .failed(let message):
                             ContentUnavailableView(
-                                "Suche fehlgeschlagen",
+                                appState.t(.searchFailed),
                                 systemImage: "xmark.circle",
                                 description: Text(message)
                             )
@@ -80,8 +83,8 @@ struct SearchView: View {
                     }
                 }
             }
-            .navigationTitle("Suche")
-            .searchable(text: $query, prompt: "Titel, Alben, Playlists, Interpreten…")
+            .navigationTitle(appState.t(.search))
+            .searchable(text: $query, prompt: appState.t(.searchPrompt))
             .onChange(of: query) { _, newValue in
                 scheduleSearch(newValue)
             }
@@ -103,16 +106,16 @@ struct SearchView: View {
 
             ForEach(MediaTypeFilter.allCases) { type in
                 if selectedTypes.contains(type) {
-                    Button(type.label) { toggleType(type) }
+                    Button(type.label(appState.uiLanguage)) { toggleType(type) }
                         .buttonStyle(.glassProminent)
                 } else {
-                    Button(type.label) { toggleType(type) }
+                    Button(type.label(appState.uiLanguage)) { toggleType(type) }
                         .buttonStyle(.glass)
                 }
             }
 
-            Picker("Quelle", selection: $selectedProviderDomain) {
-                Text("Alle Quellen").tag(nil as String?)
+            Picker(appState.t(.source), selection: $selectedProviderDomain) {
+                Text(appState.t(.allSources)).tag(nil as String?)
                 ForEach(appState.musicProviders) { provider in
                     Text(provider.name).tag(provider.domain as String?)
                 }
@@ -139,12 +142,12 @@ struct SearchView: View {
             || !results.playlists.isEmpty || !results.artists.isEmpty {
             List {
                 if !results.artists.isEmpty {
-                    Section("Interpreten") {
+                    Section(appState.t(.mediaTypeArtist)) {
                         ForEach(results.artists) { ArtistRowView(artist: $0) }
                     }
                 }
                 if !results.albums.isEmpty {
-                    Section("Alben") {
+                    Section(appState.t(.mediaTypeAlbum)) {
                         ForEach(results.albums) { AlbumRowView(album: $0) }
                     }
                 }
@@ -154,7 +157,7 @@ struct SearchView: View {
                     }
                 }
                 if !results.tracks.isEmpty {
-                    Section("Titel") {
+                    Section(appState.t(.mediaTypeTrack)) {
                         ForEach(results.tracks) { TrackRowView(track: $0) }
                     }
                 }
@@ -169,7 +172,7 @@ struct SearchView: View {
             Group {
                 if appState.playlists.isEmpty {
                     ContentUnavailableView(
-                        "Keine Playlists gefunden",
+                        appState.t(.noPlaylistsFound),
                         systemImage: "music.note.list"
                     )
                 } else {

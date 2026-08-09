@@ -8,12 +8,17 @@ public enum ConnectionStatus: Equatable, Sendable {
     case reconnecting(attempt: Int)
     case error(String)
 
-    public var description: String {
+    /// Parametrisiert (statt `CustomStringConvertible`/ambientem Global), da
+    /// `ConnectionStatusView.body` bei einem Sprachwechsel reaktiv neu
+    /// rendern muss — ein `nonisolated(unsafe)`-Read (wie in `L10n.text`
+    /// für die nonisolated Error-Enum-descriptions) würde von SwiftUIs
+    /// Observation-Tracking nicht erkannt.
+    public func description(_ language: L10n.Language) -> String {
         switch self {
-        case .disconnected: return "Nicht konfiguriert"
-        case .connecting: return "Verbinde…"
-        case .connected: return "Verbunden"
-        case .reconnecting(let attempt): return "Erneuter Versuch (\(attempt))…"
+        case .disconnected: return L10n.text(.statusDisconnected, language)
+        case .connecting: return L10n.text(.statusConnecting, language)
+        case .connected: return L10n.text(.statusConnected, language)
+        case .reconnecting(let attempt): return L10n.reconnecting(attempt: attempt, language)
         case .error(let message): return message
         }
     }
@@ -129,7 +134,7 @@ public final class AppState {
                 await refreshPlayers()
                 await consumeEvents(from: newClient)
             } catch {
-                connectionStatus = .error("Verbindung fehlgeschlagen: \(error)")
+                connectionStatus = .error(L10n.connectionFailed("\(error)", uiLanguage))
             }
 
             client = nil
@@ -176,7 +181,7 @@ public final class AppState {
                 selectedPlayerID = settings.allowedPlayerIDs.first ?? list.first?.playerId
             }
         } catch {
-            connectionStatus = .error("Player-Liste konnte nicht geladen werden: \(error)")
+            connectionStatus = .error(L10n.playerListLoadFailed("\(error)", uiLanguage))
         }
     }
 
@@ -240,8 +245,8 @@ public final class AppState {
 
         public var description: String {
             switch self {
-            case .noClient: return "Nicht mit Music Assistant verbunden"
-            case .noCurrentTrack: return "Kein Titel wird aktuell abgespielt"
+            case .noClient: return L10n.text(.errorNoClient, L10n.currentLanguage)
+            case .noCurrentTrack: return L10n.text(.errorNoCurrentTrack, L10n.currentLanguage)
             }
         }
     }
@@ -281,8 +286,8 @@ public final class AppState {
 
         public var description: String {
             switch self {
-            case .noClient: return "Nicht mit Music Assistant verbunden"
-            case .noCurrentTrack: return "Kein Titel wird aktuell abgespielt"
+            case .noClient: return L10n.text(.errorNoClient, L10n.currentLanguage)
+            case .noCurrentTrack: return L10n.text(.errorNoCurrentTrack, L10n.currentLanguage)
             }
         }
     }
@@ -323,8 +328,8 @@ public final class AppState {
 
         public var description: String {
             switch self {
-            case .noClient: return "Nicht mit Music Assistant verbunden"
-            case .noCurrentTrack: return "Kein Titel wird aktuell abgespielt"
+            case .noClient: return L10n.text(.errorNoClient, L10n.currentLanguage)
+            case .noCurrentTrack: return L10n.text(.errorNoCurrentTrack, L10n.currentLanguage)
             }
         }
     }
@@ -359,8 +364,8 @@ public final class AppState {
 
         public var description: String {
             switch self {
-            case .noClient: return "Nicht mit Music Assistant verbunden"
-            case .noPlayer: return "Kein Player ausgewählt"
+            case .noClient: return L10n.text(.errorNoClient, L10n.currentLanguage)
+            case .noPlayer: return L10n.text(.errorNoPlayer, L10n.currentLanguage)
             }
         }
     }
@@ -444,4 +449,81 @@ public final class AppState {
         }
         return dataURI
     }
+
+    public enum QueueError: Error, CustomStringConvertible, Sendable {
+        case noClient
+        case noPlayer
+
+        public var description: String {
+            switch self {
+            case .noClient: return L10n.text(.errorNoClient, L10n.currentLanguage)
+            case .noPlayer: return L10n.text(.errorNoPlayer, L10n.currentLanguage)
+            }
+        }
+    }
+
+    // Weder "player_queues/crossfade" (Bool-Befehl) noch das neuere
+    // Queue-Config-Entry "crossfade_mode" existieren auf diesem Server
+    // ("Invalid command") — er läuft auf einem Stand vor
+    // music-assistant/server#4373 (21.06.2026), das Crossfade von einer
+    // Pro-Player- zu einer Pro-Queue-Einstellung verschoben hat. Auf diesem
+    // älteren Stand ist Crossfade das Config-Entry "smart_fades_mode" auf der
+    // PLAYER- (nicht Queue-)Konfiguration, verifiziert im Quellcode des
+    // Commits unmittelbar vor #4373. Der Button heißt bewusst
+    // "Smart Crossfade", daher togglet er zwischen "smart_crossfade" und
+    // "disabled".
+    private static let crossfadeConfigKey = "smart_fades_mode"
+    private static let crossfadeOnValue = "smart_crossfade"
+    private static let crossfadeOffValue = "disabled"
+
+    /// Lädt den aktuellen Smart-Crossfade-Status des gewählten Players.
+    ///
+    /// Liest bewusst den gespeicherten Config-Wert (`config/players/get_value`)
+    /// statt eines abgeleiteten Felds auf der Queue: `player_queues/get` liefert
+    /// auf diesem Server kein `smart_fades_active` — das Feld fehlt im JSON
+    /// komplett (nicht nur `false`), das tolerante Decoding las das bislang
+    /// immer stillschweigend als "aus", wodurch Ausschalten es tatsächlich
+    /// immer wieder einschaltete.
+    public func loadCrossfadeEnabled() async throws -> Bool {
+        guard let client else { throw QueueError.noClient }
+        guard let playerId = selectedPlayerID else { throw QueueError.noPlayer }
+        let raw = try await client.sendRaw(
+            "config/players/get_value",
+            args: PlayerConfigGetValueArgs(playerId: playerId, key: Self.crossfadeConfigKey)
+        )
+        let mode = (try? raw.decode(String.self)) ?? Self.crossfadeOffValue
+        return mode == Self.crossfadeOnValue
+    }
+
+    /// Togglet Smart Crossfade für die Queue des gewählten Players und gibt
+    /// den neuen Status zurück. Ein Konfigurationswechsel dieses Entries löst
+    /// serverseitig zwar bei laufender Wiedergabe automatisch einen
+    /// Stop+Resume aus (requires_reload), das reicht aber laut Nutzeranforderung
+    /// nicht als alleinige Garantie, daher zusätzlich explizit pausieren +
+    /// fortsetzen.
+    public func toggleCrossfade() async throws -> Bool {
+        guard let client else { throw QueueError.noClient }
+        guard let playerId = selectedPlayerID else { throw QueueError.noPlayer }
+        let currentlyActive = try await loadCrossfadeEnabled()
+        let newMode = currentlyActive ? Self.crossfadeOffValue : Self.crossfadeOnValue
+        try await client.sendRaw(
+            "config/players/save",
+            args: PlayerConfigSaveArgs(playerId: playerId, values: [Self.crossfadeConfigKey: newMode])
+        )
+
+        if selectedPlayer?.playbackState == .playing {
+            try await client.sendRaw("players/cmd/play_pause", args: PlayerIDArgs(playerId: playerId))
+            try await Task.sleep(for: .milliseconds(300))
+            try await client.sendRaw("players/cmd/play_pause", args: PlayerIDArgs(playerId: playerId))
+        }
+        return !currentlyActive
+    }
+}
+
+public extension AppState {
+    var uiLanguage: L10n.Language { settings.language.resolved() }
+
+    /// Kurzform für `L10n.text(key, uiLanguage)` an den vielen Call-Sites in
+    /// den Views (die dort ohnehin schon `@Environment(AppState.self)` haben).
+    func t(_ key: L10n.Key) -> String { L10n.text(key, uiLanguage) }
 }

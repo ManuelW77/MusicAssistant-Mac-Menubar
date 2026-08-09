@@ -5,9 +5,11 @@ struct PlayerPickerView: View {
     let players: [MAPlayer]
     @Binding var selectedPlayerID: String?
 
+    @Environment(AppState.self) private var appState
+
     var body: some View {
         if players.isEmpty {
-            Text("Keine Player freigegeben – siehe Einstellungen")
+            Text(appState.t(.noPlayersAllowed))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } else {

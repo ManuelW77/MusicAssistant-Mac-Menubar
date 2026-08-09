@@ -9,10 +9,11 @@ struct RadioButtonView: View {
         Button {
             start()
         } label: {
-            Label("Radio starten", systemImage: "dot.radiowaves.left.and.right")
+            Label(appState.t(.startRadio), systemImage: "dot.radiowaves.left.and.right")
                 .labelStyle(.iconOnly)
         }
         .buttonStyle(.glass)
+        .help(appState.t(.startRadio))
         .disabled(appState.selectedPlayer?.currentMedia == nil || isWorking)
     }
 

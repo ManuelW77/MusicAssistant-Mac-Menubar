@@ -62,7 +62,7 @@ struct MenuBarContentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             VStack(spacing: 2) {
-                Text(appState.selectedPlayer?.currentMedia?.title ?? "Keine Wiedergabe")
+                Text(appState.selectedPlayer?.currentMedia?.title ?? appState.t(.noPlayback))
                     .font(.headline)
                     .lineLimit(1)
                 Text(appState.selectedPlayer?.currentMedia?.artist ?? " ")
@@ -76,13 +76,16 @@ struct MenuBarContentView: View {
 
                 RadioButtonView()
 
+                CrossfadeButtonView()
+
                 Button {
                     showAddToPlaylist = true
                 } label: {
-                    Label("Zu Playlist hinzufügen", systemImage: "text.badge.plus")
+                    Label(appState.t(.addToPlaylist), systemImage: "text.badge.plus")
                         .labelStyle(.iconOnly)
                 }
                 .buttonStyle(.glass)
+                .help(appState.t(.addToPlaylist))
                 .disabled(appState.selectedPlayer?.currentMedia == nil)
                 .popover(isPresented: $showAddToPlaylist) {
                     AddToPlaylistView()
@@ -92,10 +95,11 @@ struct MenuBarContentView: View {
                 Button {
                     openWindow(id: "search")
                 } label: {
-                    Label("Suche", systemImage: "magnifyingglass")
+                    Label(appState.t(.search), systemImage: "magnifyingglass")
                         .labelStyle(.iconOnly)
                 }
                 .buttonStyle(.glass)
+                .help(appState.t(.search))
             }
 
             PlayerControlsView(

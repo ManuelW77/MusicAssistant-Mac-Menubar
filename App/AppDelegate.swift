@@ -78,7 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// menu item ... without visibly displaying the menu").
     private func openSettingsWindowIfNeeded() {
         guard appState.settings.serverBaseURL == nil || appState.settings.accessToken == nil else { return }
-        let menu = NSHostingMenu(rootView: SettingsLink { Text("Einstellungen…") })
+        let menu = NSHostingMenu(rootView: SettingsLink { Text(appState.t(.settingsEllipsis)) })
         menu.performActionForItem(at: 0)
     }
 
@@ -133,7 +133,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Scene nicht mehr zuverlässig unterstützt ("Please use SettingsLink").
         // NSHostingMenu übersetzt SwiftUI-Menüinhalt (inkl. SettingsLink) in
         // ein natives NSMenu, dadurch funktioniert SettingsLink korrekt.
-        let menu = NSHostingMenu(rootView: ContextMenuContent())
+        let menu = NSHostingMenu(rootView: ContextMenuContent(
+            settingsLabel: appState.t(.settingsEllipsis),
+            quitLabel: appState.t(.quit)
+        ))
 
         // Menü nur für diesen einen Klick setzen: Ist statusItem.menu dauerhaft
         // gesetzt, übernimmt AppKit die Klick-Behandlung komplett und der
@@ -149,12 +152,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 /// programmatisch zu öffnen (der alte showSettingsWindow:-Selector-Trick
 /// wird nicht mehr zuverlässig unterstützt).
 private struct ContextMenuContent: View {
+    // Plain Strings statt @Environment(AppState.self): dieses Menü wird über
+    // ein frisches NSHostingMenu ohne .environment(appState)-Injection
+    // gehostet (siehe showContextMenu()), ein Environment-Lookup würde daher
+    // fehlschlagen. Da das Menü bei jedem Rechtsklick neu gebaut wird
+    // (kein persistenter View wie das Popover), ist das unproblematisch.
+    let settingsLabel: String
+    let quitLabel: String
+
     var body: some View {
         SettingsLink {
-            Text("Einstellungen…")
+            Text(settingsLabel)
         }
         Divider()
-        Button("Beenden") {
+        Button(quitLabel) {
             NSApp.terminate(nil)
         }
     }

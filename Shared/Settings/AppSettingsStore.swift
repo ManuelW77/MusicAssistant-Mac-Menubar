@@ -31,6 +31,13 @@ public final class AppSettingsStore {
         didSet { defaults.set(lastSelectedPlayerID, forKey: Keys.lastSelectedPlayerID) }
     }
 
+    public var language: AppLanguage {
+        didSet {
+            defaults.set(language.rawValue, forKey: Keys.language)
+            L10n.currentLanguage = language.resolved()
+        }
+    }
+
     public var serverBaseURL: URL? {
         guard !serverBaseURLString.isEmpty else { return nil }
         return URL(string: serverBaseURLString)
@@ -41,6 +48,7 @@ public final class AppSettingsStore {
         static let accessToken = "mass.accessToken"
         static let allowedPlayerIDs = "mass.allowedPlayerIDs"
         static let lastSelectedPlayerID = "mass.lastSelectedPlayerID"
+        static let language = "mass.language"
     }
 
     public init(defaults: UserDefaults = .standard) {
@@ -49,5 +57,9 @@ public final class AppSettingsStore {
         self.accessToken = defaults.string(forKey: Keys.accessToken)
         self.allowedPlayerIDs = Set(defaults.stringArray(forKey: Keys.allowedPlayerIDs) ?? [])
         self.lastSelectedPlayerID = defaults.string(forKey: Keys.lastSelectedPlayerID)
+        self.language = AppLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .system
+        // didSet feuert bei self.x = … innerhalb des eigenen init nicht —
+        // L10n.currentLanguage muss hier explizit synchronisiert werden.
+        L10n.currentLanguage = self.language.resolved()
     }
 }

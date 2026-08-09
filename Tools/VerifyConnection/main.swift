@@ -124,6 +124,26 @@ struct VerifyConnectionMain {
                 }
             }
 
+            if let firstPlayer = players.first {
+                print("\nLade Queue-Info für \(firstPlayer.name) [\(firstPlayer.playerId)]…")
+                let queue: PlayerQueueInfo? = try await client.send(
+                    "player_queues/get",
+                    args: QueueIDArgs(queueId: firstPlayer.playerId)
+                )
+                if let queue {
+                    print("queue_id=\(queue.queueId)")
+                } else {
+                    print("Keine Queue für diesen Player gefunden (nil)")
+                }
+
+                print("\nLade Crossfade-Config-Wert (smart_fades_mode) für \(firstPlayer.name)…")
+                let crossfadeMode: String = try await client.send(
+                    "config/players/get_value",
+                    args: PlayerConfigGetValueArgs(playerId: firstPlayer.playerId, key: "smart_fades_mode")
+                )
+                print("smart_fades_mode=\(crossfadeMode)")
+            }
+
             await client.disconnect()
         } catch {
             print("Fehler: \(error)")

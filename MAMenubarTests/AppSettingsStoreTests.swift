@@ -41,4 +41,26 @@ struct AppSettingsStoreTests {
         let store = makeStore()
         #expect(store.serverBaseURL == nil)
     }
+
+    @Test("Sprache defaultet auf .system und persistiert über eine neue Instanz hinweg")
+    func languageRoundtrip() {
+        let suiteName = "MAMenubarTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+
+        let store = AppSettingsStore(defaults: defaults)
+        #expect(store.language == .system)
+
+        store.language = .de
+        let reloaded = AppSettingsStore(defaults: defaults)
+        #expect(reloaded.language == .de)
+    }
+
+    @Test("Sprachänderung hält L10n.currentLanguage synchron")
+    func languageChangeUpdatesCurrentLanguage() {
+        let store = makeStore()
+        store.language = .en
+        #expect(L10n.currentLanguage == .en)
+        store.language = .de
+        #expect(L10n.currentLanguage == .de)
+    }
 }
