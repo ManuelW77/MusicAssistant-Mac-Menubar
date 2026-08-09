@@ -1,126 +1,149 @@
 # MusicAssistant-Mac-Menubar
 
-Kleines natives macOS-Menüleisten-Tool für [Music Assistant](https://www.music-assistant.io/) (MA). Zeigt Cover, Titel/Künstler des aktuell laufenden Players und erlaubt Play/Pause sowie Vor-/Zurückspringen direkt aus der Menüleiste, ohne die volle MA-Web-UI oder Companion-App öffnen zu müssen.
+🇩🇪 [Deutsch](README.de.md)
 
-## Funktionen
+A native macOS menu bar client for [Music Assistant](https://www.music-assistant.io/) (MA). Control your currently playing player right from the menu bar — cover art, title/artist, transport controls, volume, favorites, radio, smart crossfade, playlists, and a full search — without opening the MA web UI or a companion app.
 
-- Icon in der Menüleiste, Klick öffnet ein Popover mit Cover, Titel/Künstler und Transport-Controls (⏮ ⏯ ⏭).
-- Steuerung eines aktiven Players, wechselbar über einen Picker im Popover.
-- Aktuellen Titel per Klick zu einer vorhandenen oder neu anzulegenden MA-Playlist hinzufügen.
-- Rechtsklick auf das Icon öffnet ein Menü mit „Einstellungen…" und „Beenden".
-- Settings-Dialog zum Einstellen von Server-URL, Access-Token, einer Whitelist der wählbaren MA-Player sowie „Bei Anmeldung starten".
-- Automatischer Reconnect mit Backoff, Live-Updates über die MA-WebSocket-Events (kein Polling).
-- Reine Menüleisten-App ohne Dock-Icon (`LSUIElement`).
+![Menu bar popover](Screenshots/SCR-20260809-jpjt.png)
 
-## Voraussetzungen
+## Features
 
-- macOS 26+ (Liquid-Glass-UI)
-- Xcode mit swift-tools-version 6.2+
-- Ein laufender Music-Assistant-Server sowie ein Long-Lived Access Token (MA-Web-UI → Profil → Access Tokens)
+- Menu bar icon; click opens a popover with cover art (incl. progress bar), title/artist, transport controls (⏮ ⏯ ⏭), and a volume slider.
+- Control one active player, switchable via a picker in the popover.
+- Toggle the current track as a favorite, start radio playback with similar tracks, toggle Smart Crossfade per player.
+- Add the current track to an existing or newly created MA playlist with a click.
+- A dedicated search window for tracks, albums, playlists and artists, with a provider filter and a playlists overview.
+- Every icon button has a tooltip (on hover) explaining what it does.
+- Right-click the icon opens a menu with "Settings…" and "Quit".
+- Settings dialog for server URL, access token, a whitelist of selectable MA players, "Start at Login", and the app language.
+- Multi-language (German/English): follows the system language automatically (falls back to English), overridable manually in Settings.
+- Automatic reconnect with backoff, live updates via MA WebSocket events (no polling), connection status indicator in the popover.
+- Automatic check for new releases (GitHub Releases).
+- Pure menu bar app with no Dock icon (`LSUIElement`).
 
-## Installation via Homebrew
+## Installation
+
+### Via DMG download
+
+Download the latest version from the [GitHub releases page](https://github.com/ManuelW77/MusicAssistant-Mac-Menubar/releases/latest) (`MA-Menubar-vX.Y.Z.dmg`), open it, and drag "MA Menubar.app" into `/Applications`. The DMG is signed and notarized by Apple — no Gatekeeper right-click workaround needed.
+
+### Via Homebrew
 
 ```
 brew tap ManuelW77/musicassistant-mac-menubar https://github.com/ManuelW77/MusicAssistant-Mac-Menubar
 brew install --cask ma-menubar
 ```
 
-Die Cask-Formel (`Casks/ma-menubar.rb`) liegt bewusst im Hauptrepo statt in einem separaten `homebrew-*`-Tap-Repo — dafür ist beim `brew tap` die volle Repo-URL statt der Kurzform nötig. Sie wird bei jedem Release automatisch auf die neue Version/den neuen SHA256 aktualisiert (`.github/workflows/release.yml`).
+The cask formula (`Casks/ma-menubar.rb`) lives deliberately in the main repo rather than a separate `homebrew-*` tap repo — that's why `brew tap` needs the full repo URL instead of the short form. It's automatically updated to the new version/SHA256 on every release (`.github/workflows/release.yml`).
 
-## Projektstruktur
+## Requirements
+
+- macOS 26+ (Liquid Glass UI)
+- Xcode with swift-tools-version 6.2+
+- A running Music Assistant server and a Long-Lived Access Token (MA web UI → Profile → Access Tokens)
+
+## Project structure
 
 ```
-Shared/            SPM-Library "MAMenubarLib": WebSocket-Client, Datenmodelle,
-                    Settings-Speicher, AppState-Orchestrator
-App/                SwiftUI-App (MenuBarExtra-Popover + Settings-Dialog)
-Tools/VerifyConnection/  CLI zur Protokollverifikation gegen einen echten Server
-MAMenubarTests/     Unit-Tests für Shared/
+Shared/            SPM library "MAMenubarLib": WebSocket client, data models,
+                    settings storage, localization, AppState orchestrator
+App/                SwiftUI app (MenuBarExtra popover + settings dialog)
+Tools/VerifyConnection/  CLI for protocol verification against a real server
+MAMenubarTests/     Unit tests for Shared/
 ```
 
-Es gibt bewusst kein `.xcodeproj` — das Projekt ist ein reines Swift Package. Xcode kann `Package.swift` direkt öffnen und daraus bauen/debuggen.
+There is deliberately no `.xcodeproj` — the project is a plain Swift Package. Xcode can open `Package.swift` directly and build/debug from it.
 
-## Bauen & Starten
+## Building & Running
 
-### Mit Xcode (empfohlen für Entwicklung)
+### With Xcode (recommended for development)
 
 ```
 open Package.swift
 ```
 
-Im Schema-Dropdown **„MAMenubar"** auswählen (nicht `VerifyConnection` oder `MAMenubarTests`) und ⌘R. Da `LSUIElement = YES` gesetzt ist, öffnet sich kein Fenster — die App erscheint nur als Icon in der Menüleiste.
+Select **"MAMenubar"** in the scheme dropdown (not `VerifyConnection` or `MAMenubarTests`) and press ⌘R. Since `LSUIElement = YES` is set, no window opens — the app only appears as a menu bar icon.
 
-### Mit der Kommandozeile
+### From the command line
 
 ```
-make build   # swift build (Debug)
+make build   # swift build (debug)
 make test    # swift test
-make run     # Debug-Build, ad-hoc/zertifikatssigniert, direkt starten
+make run     # debug build, ad-hoc/certificate-signed, launches directly
 ```
 
-### Fertiges `.app`-Bundle bauen
+### Building a ready-to-use `.app` bundle
 
 ```
 make app
 ```
 
-Baut Release-optimiert und erzeugt ein doppelklickbares Bundle unter `dist/MA Menubar.app`, das sich z.B. nach `/Applications` verschieben lässt:
+Builds release-optimized and produces a double-clickable bundle at `dist/MA Menubar.app`, which can be moved to `/Applications`, for example:
 
 ```
 mv "dist/MA Menubar.app" /Applications/
 ```
 
-`run` und `app` signieren standardmäßig mit dem lokalen Zertifikat `Apple Development: Manuel Weiser (469HR6FMTH)` aus der Keychain (siehe `SIGN_IDENTITY` im `Makefile`). Auf einem Rechner ohne dieses Zertifikat mit `make app SIGN_IDENTITY=-` auf Ad-hoc-Signatur zurückfallen.
+`run` and `app` sign by default with the local certificate `Apple Development: Manuel Weiser (469HR6FMTH)` from the keychain (see `SIGN_IDENTITY` in the `Makefile`). On a machine without that certificate, fall back to ad-hoc signing with `make app SIGN_IDENTITY=-`.
 
-## Signierte Releases (GitHub Actions)
+## Signed releases (GitHub Actions)
 
-Das Repo wird zusätzlich zu Gitea (`origin`) nach GitHub gespiegelt (`github`-Remote, https://github.com/ManuelW77/MusicAssistant-Mac-Menubar). Ein Push eines `vX.Y.Z`-Tags dorthin (oder ein manueller Trigger) löst `.github/workflows/release.yml` aus: baut per `make app`, signiert mit einem **Developer-ID-Application**-Zertifikat, notarisiert bei Apple (`notarytool`) und hängt ein gestapeltes Drag-in-Applications-`.dmg` (`make dmg`) an eine neue GitHub Release — Gatekeeper zeigt auf fremden Macs dann keine Warnung mehr.
+The repo is mirrored to GitHub in addition to Gitea (`origin`) (`github` remote, https://github.com/ManuelW77/MusicAssistant-Mac-Menubar). Pushing a `vX.Y.Z` tag there (or a manual trigger) runs `.github/workflows/release.yml`: builds via `make app`, signs with a **Developer ID Application** certificate, notarizes with Apple (`notarytool`), and attaches a drag-to-Applications `.dmg` (`make dmg`) to a new GitHub release — Gatekeeper no longer shows a warning on other Macs.
 
-Lokal lässt sich das `.dmg` nach einem `make app` auch separat erzeugen:
+Locally, the `.dmg` can also be generated separately after a `make app`:
 
 ```
 make dmg
 ```
 
-Versionierung folgt [SemVer](https://semver.org/), beginnend bei `v1.0.0`. Bei einem Tag-Push übernimmt der Workflow den Tag automatisch als `CFBundleShortVersionString` (Tag ohne führendes `v`) und die GitHub-Actions-Run-Nummer als `CFBundleVersion` (Build-Nummer) — `App/Info.plist` muss dafür nicht manuell angepasst werden.
+Versioning follows [SemVer](https://semver.org/), starting at `v1.0.0`. On a tag push, the workflow automatically takes the tag as `CFBundleShortVersionString` (tag without the leading `v`) and the GitHub Actions run number as `CFBundleVersion` (build number) — `App/Info.plist` doesn't need to be edited by hand for this.
 
-**Branch-Modell**: `devel` ist der Arbeits-Branch (geht an Gitea `origin/devel`), `main` ist ein reiner Release-Spiegel — er wird nur beim Release aktualisiert und dann zu `origin` **und** `github` gepusht. Ein Release auslösen:
+**Branch model**: `devel` is the working branch (goes to Gitea `origin/devel`), `main` is a pure release mirror — it's only updated during a release and then pushed to both `origin` **and** `github`. To cut a release:
 
 ```
 git checkout main
 git merge devel
-make release              # Patch-Bump, z.B. 1.0.0 -> 1.0.1
-make release BUMP=minor   # Minor-Bump
-make release BUMP=v2.0.0  # explizite Version
+make release              # patch bump, e.g. 1.0.0 -> 1.0.1
+make release BUMP=minor   # minor bump
+make release BUMP=v2.0.0  # explicit version
 ```
 
-`scripts/release.sh` bricht ab, wenn man sich nicht auf `main` befindet oder der Working Tree nicht sauber ist, fragt vor dem Push nochmal nach und pusht dann `main` + den neuen Tag zu beiden Remotes — der Tag-Push zu GitHub löst den Sign-&-Notarize-Workflow aus. Beim Aufruf ganz ohne Argument (`make release`) zeigt es zuerst die aktuelle Version und fragt dann interaktiv, ob `major`, `minor` oder `patch` erhöht werden soll (Standard bei leerer Eingabe: `patch`); bei explizitem `BUMP=...` entfällt diese Rückfrage.
+`scripts/release.sh` refuses to run unless you're on `main` with a clean working tree, asks for confirmation before pushing, then pushes `main` + the new tag to both remotes — the tag push to GitHub triggers the sign-and-notarize workflow. Called with no arguments (`make release`), it first shows the current version and then prompts interactively for `major`/`minor`/`patch` (empty input defaults to `patch`); with an explicit `BUMP=...` that prompt is skipped.
 
-Dafür müssen einmalig folgende Repo-Secrets gesetzt werden (`gh secret set NAME --repo ManuelW77/MusicAssistant-Mac-Menubar -b"…"`, selbst ausführen — dafür wird das Zertifikat/die Credentials nirgendwo sonst eingegeben):
+For this, the following repo secrets need to be set once (`gh secret set NAME --repo ManuelW77/MusicAssistant-Mac-Menubar -b"…"`, run this yourself — the certificate/credentials are never entered anywhere else):
 
-| Secret | Herkunft |
+| Secret | Source |
 |---|---|
-| `MACOS_CERTIFICATE_P12_BASE64` | Developer-ID-Application-Zertifikat + privater Schlüssel aus Keychain Access als `.p12` exportieren, dann `base64 -i certificate.p12` |
-| `MACOS_CERTIFICATE_PASSWORD` | Passwort, das beim `.p12`-Export vergeben wurde |
-| `KEYCHAIN_PASSWORD` | Beliebiges Passwort nur für die temporäre CI-Keychain, z.B. `openssl rand -base64 24` |
-| `DEVELOPER_ID_IDENTITY` | Exakter Identity-String, z.B. `Developer ID Application: Manuel Weiser (TEAMID)` (siehe `security find-identity -v -p codesigning`) |
-| `NOTARY_KEY_ID` / `NOTARY_ISSUER_ID` / `NOTARY_KEY_P8_BASE64` | App Store Connect → Users and Access → Integrations → App Store Connect API: Key erzeugen (Rolle „Developer" reicht), `.p8` einmalig herunterladen und `base64 -i AuthKey_XXXX.p8` |
+| `MACOS_CERTIFICATE_P12_BASE64` | Export a Developer ID Application certificate + private key from Keychain Access as `.p12`, then `base64 -i certificate.p12` |
+| `MACOS_CERTIFICATE_PASSWORD` | The password set during the `.p12` export |
+| `KEYCHAIN_PASSWORD` | Any password, only used for the temporary CI keychain, e.g. `openssl rand -base64 24` |
+| `DEVELOPER_ID_IDENTITY` | The exact identity string, e.g. `Developer ID Application: Manuel Weiser (TEAMID)` (see `security find-identity -v -p codesigning`) |
+| `NOTARY_KEY_ID` / `NOTARY_ISSUER_ID` / `NOTARY_KEY_P8_BASE64` | App Store Connect → Users and Access → Integrations → App Store Connect API: create a key (role "Developer" is sufficient), download the `.p8` once and `base64 -i AuthKey_XXXX.p8` |
 
-## Konfiguration
+## Configuration
 
-Beim ersten Start über Rechtsklick auf das Menüleisten-Icon → „Einstellungen…":
+On first launch, right-click the menu bar icon → "Settings…":
 
-1. **Tab „Allgemein"**: optional „Bei Anmeldung starten" aktivieren (nutzt `SMAppService.mainApp` — funktioniert nur aus einem echten `.app`-Bundle, nicht aus dem rohen Debug-Build). Zeigt außerdem aktuelle Version, Entwickler und GitHub-Link, und prüft beim Öffnen automatisch (sowie über „Nach Updates suchen") gegen die GitHub-Releases-API, ob eine neuere Version verfügbar ist.
-2. **Tab „Server"**: Server-Basis-URL (z.B. `https://music.example.org`) und Access-Token eintragen, mit „Verbindung testen" prüfen, dann „Speichern".
-3. **Tab „Player"**: Aus den vom Server gemeldeten Playern die gewünschten für den Popover-Picker aktivieren.
+1. **"General" tab**: optionally enable "Start at Login" (uses `SMAppService.mainApp` — only works from a real `.app` bundle, not from the raw debug build). Choose the app language (System / Deutsch / English). Also shows the current version, developer, and GitHub link, and automatically checks (on open, and via "Check for Updates") against the GitHub Releases API whether a newer version is available.
 
-Server-URL, Access-Token und Player-Whitelist liegen in `UserDefaults` (bewusst nicht in der Keychain — der dafür beim allerersten Speichern unvermeidbare "App möchte auf deinen Schlüsselbund zugreifen"-Dialog wurde zugunsten einer reibungslosen Ersteinrichtung vermieden; der Token liegt dadurch unverschlüsselt auf der Platte).
+   ![Settings – General](Screenshots/SCR-20260809-jpnk.png)
 
-## Protokollverifikation gegen einen echten Server
+2. **"Server" tab**: enter the server base URL (e.g. `https://music.example.org`) and access token, verify with "Test Connection", then "Save".
 
-Die Music-Assistant-WebSocket-API ist nicht vollständig dokumentiert; `Tools/VerifyConnection` prüft Connect/Auth/Player-Liste gegen einen echten Server, ohne die UI zu bauen:
+   ![Settings – Server](Screenshots/SCR-20260809-jppf.png)
+
+3. **"Player" tab**: from the players reported by the server, enable the ones you want in the popover picker.
+
+   ![Settings – Player](Screenshots/SCR-20260809-jpwr.png)
+
+Server URL, access token, player whitelist, and language live in `UserDefaults` (deliberately not in the Keychain — the unavoidable "app wants to access your keychain" dialog on the very first save was traded away in favor of a friction-free first run; the token sits unencrypted on disk as a result).
+
+## Protocol verification against a real server
+
+The Music Assistant WebSocket API isn't fully documented; `Tools/VerifyConnection` checks connect/auth/player list against a real server without building the UI:
 
 ```
-make verify URL=https://music.example.org TOKEN=<dein-token>
+make verify URL=https://music.example.org TOKEN=<your-token>
 ```
 
 ## Tests
@@ -129,4 +152,4 @@ make verify URL=https://music.example.org TOKEN=<dein-token>
 make test
 ```
 
-Deckt u.a. das JSON-Decoding (inkl. Partial-Response-Handling der MA-API), die Bild-URL-Auflösung (`MassEndpoint`, inkl. Umschreiben privater LAN-Adressen auf die öffentliche Server-URL) sowie Settings-Roundtrips ab.
+Covers, among other things, JSON decoding (incl. the MA API's partial-response handling), image URL resolution (`MassEndpoint`, incl. rewriting private LAN addresses to the public server URL), settings roundtrips, and the completeness of the translation table.
