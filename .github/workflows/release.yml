@@ -102,9 +102,17 @@ jobs:
       - name: Release-Notes aus Tag extrahieren
         env:
           REF_NAME: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          git tag -l --format='%(contents)' "$REF_NAME" > "$RUNNER_TEMP/release-notes.md"
+          # actions/checkout fetcht bei einem Tag-Trigger nur den bereits
+          # gepeelten Commit (nicht das annotierte Tag-Objekt) in die lokale
+          # refs/tags-Ref - `git tag -l --format=%(contents)` würde deshalb
+          # auf die Commit-Message zurückfallen statt die echte Tag-Message
+          # zu liefern. Stattdessen die Tag-Message direkt über die
+          # GitHub-API abfragen, unabhängig vom lokalen Checkout-Zustand.
+          TAG_SHA=$(gh api "repos/${{ github.repository }}/git/ref/tags/$REF_NAME" --jq '.object.sha')
+          gh api "repos/${{ github.repository }}/git/tags/$TAG_SHA" --jq '.message' > "$RUNNER_TEMP/release-notes.md"
 
       - name: GitHub Release erstellen
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
