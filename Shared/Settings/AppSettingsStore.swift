@@ -38,6 +38,14 @@ public final class AppSettingsStore {
         }
     }
 
+    /// Version, für die zuletzt eine Update-Benachrichtigung gepostet wurde —
+    /// verhindert, dass AppState.checkForUpdate() bei jedem 24h-Hintergrund-
+    /// Check für dieselbe, weiterhin nicht installierte Version erneut
+    /// benachrichtigt.
+    public var lastNotifiedUpdateVersion: String? {
+        didSet { defaults.set(lastNotifiedUpdateVersion, forKey: Keys.lastNotifiedUpdateVersion) }
+    }
+
     public var serverBaseURL: URL? {
         guard !serverBaseURLString.isEmpty else { return nil }
         return URL(string: serverBaseURLString)
@@ -49,6 +57,7 @@ public final class AppSettingsStore {
         static let allowedPlayerIDs = "mass.allowedPlayerIDs"
         static let lastSelectedPlayerID = "mass.lastSelectedPlayerID"
         static let language = "mass.language"
+        static let lastNotifiedUpdateVersion = "mass.lastNotifiedUpdateVersion"
     }
 
     public init(defaults: UserDefaults = .standard) {
@@ -58,6 +67,7 @@ public final class AppSettingsStore {
         self.allowedPlayerIDs = Set(defaults.stringArray(forKey: Keys.allowedPlayerIDs) ?? [])
         self.lastSelectedPlayerID = defaults.string(forKey: Keys.lastSelectedPlayerID)
         self.language = AppLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .system
+        self.lastNotifiedUpdateVersion = defaults.string(forKey: Keys.lastNotifiedUpdateVersion)
         // didSet feuert bei self.x = … innerhalb des eigenen init nicht —
         // L10n.currentLanguage muss hier explizit synchronisiert werden.
         L10n.currentLanguage = self.language.resolved()

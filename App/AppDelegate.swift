@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UserNotifications
 import MAMenubarLib
 
 /// Verwaltet das Menüleisten-Icon manuell über NSStatusItem statt über
@@ -37,6 +38,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Muss vor dem ersten Update-Check gesetzt sein, sonst laufen
+        // willPresent/didReceive für eine bereits gepostete Benachrichtigung
+        // ins Leere.
+        UNUserNotificationCenter.current().delegate = self
+
         appState.start()
         appState.startUpdateChecks()
         setupStatusItem()
@@ -78,6 +84,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// menu item ... without visibly displaying the menu").
     private func openSettingsWindowIfNeeded() {
         guard appState.settings.serverBaseURL == nil || appState.settings.accessToken == nil else { return }
+        openSettingsWindow()
+    }
+
+    /// Wiederverwendet von openSettingsWindowIfNeeded() (Ersteinrichtung) und
+    /// vom Klick auf eine Update-Benachrichtigung (siehe
+    /// UNUserNotificationCenterDelegate-Erweiterung unten) — derselbe
+    /// SettingsLink-Mechanismus, unbedingt.
+    private func openSettingsWindow() {
         let menu = NSHostingMenu(rootView: SettingsLink { Text(appState.t(.settingsEllipsis)) })
         menu.performActionForItem(at: 0)
     }
@@ -144,6 +158,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.menu = menu
         statusItem?.button?.performClick(nil)
         statusItem?.menu = nil
+    }
+}
+
+/// Reagiert auf Klicks auf die Update-Benachrichtigung (UpdateNotifier in
+/// MAMenubarLib postet sie, öffnen der Settings ist aber AppKit-/UI-Code und
+/// gehört daher hierher). Beide Requirements sind laut Protokoll nonisolated
+/// (das System ruft sie von beliebigem Thread auf) — Zugriff auf
+/// @MainActor-Zustand (appState, openSettingsWindow()) daher über einen
+/// expliziten Hop, analog zum didWakeNotification-Observer oben.
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        // Ohne das würde macOS eine Benachrichtigung unterdrücken, solange
+        // die App im Vordergrund ist — bei einer Menüleisten-App soll sie
+        // aber immer sichtbar werden.
+        completionHandler([.banner, .sound])
+    }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        // completionHandler ist kein @Sendable-Closure — nicht mit in den
+        // Task { @MainActor in ... }-Block einfangen (Swift-6-Data-Race-
+        // Fehler), stattdessen sofort synchron aufrufen. Das UI-Öffnen muss
+        // darauf ohnehin nicht warten, das System braucht die Bestätigung nur
+        // als "Verarbeitung abgeschlossen"-Signal.
+        let identifier = response.notification.request.identifier
+        if identifier.hasPrefix("update-") {
+            Task { @MainActor in
+                self.openSettingsWindow()
+            }
+        }
+        completionHandler()
     }
 }
 

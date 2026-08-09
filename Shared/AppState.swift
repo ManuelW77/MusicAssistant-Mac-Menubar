@@ -97,6 +97,7 @@ public final class AppState {
     /// nicht zurücksetzt.
     public func startUpdateChecks() {
         guard updateCheckTask == nil else { return }
+        UpdateNotifier.requestAuthorizationIfNeeded()
         updateCheckTask = Task { await runUpdateCheckLoop() }
     }
 
@@ -114,6 +115,14 @@ public final class AppState {
         updateInfo = await UpdateChecker.checkForUpdate(currentVersion: version)
         lastUpdateCheckDate = Date()
         isCheckingForUpdate = false
+
+        // Nur einmal pro entdeckter Version benachrichtigen, nicht bei jedem
+        // 24h-Hintergrund-Check erneut, solange die Version nicht installiert
+        // wurde (siehe lastNotifiedUpdateVersion).
+        if let updateInfo, settings.lastNotifiedUpdateVersion != updateInfo.latestVersion {
+            UpdateNotifier.notify(version: updateInfo.latestVersion, language: uiLanguage)
+            settings.lastNotifiedUpdateVersion = updateInfo.latestVersion
+        }
     }
 
     private func runSupervised() async {

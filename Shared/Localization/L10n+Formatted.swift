@@ -32,4 +32,10 @@ public extension L10n {
     static func genericError(_ detail: String, _ language: Language) -> String {
         language == .de ? "Fehler: \(detail)" : "Error: \(detail)"
     }
+
+    static func updateAvailableBody(_ version: String, _ language: Language) -> String {
+        language == .de
+            ? "Version \(version) ist verfügbar. Klicken, um die Einstellungen zu öffnen."
+            : "Version \(version) is available. Click to open Settings."
+    }
 }

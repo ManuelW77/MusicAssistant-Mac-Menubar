@@ -63,4 +63,17 @@ struct AppSettingsStoreTests {
         store.language = .de
         #expect(L10n.currentLanguage == .de)
     }
+
+    @Test("lastNotifiedUpdateVersion defaultet auf nil und persistiert über eine neue Instanz hinweg")
+    func lastNotifiedUpdateVersionRoundtrip() {
+        let suiteName = "MAMenubarTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+
+        let store = AppSettingsStore(defaults: defaults)
+        #expect(store.lastNotifiedUpdateVersion == nil)
+
+        store.lastNotifiedUpdateVersion = "1.2.0"
+        let reloaded = AppSettingsStore(defaults: defaults)
+        #expect(reloaded.lastNotifiedUpdateVersion == "1.2.0")
+    }
 }

@@ -80,5 +80,7 @@ extension L10n {
 
         .settingsEllipsis: (de: "Einstellungen…", en: "Settings…"),
         .quit: (de: "Beenden", en: "Quit"),
+
+        .updateAvailableTitle: (de: "Update verfügbar", en: "Update Available"),
     ]
 }

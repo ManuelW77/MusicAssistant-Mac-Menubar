@@ -92,6 +92,9 @@ public enum L10n {
         // AppDelegate Kontextmenü
         case settingsEllipsis
         case quit
+
+        // UpdateNotifier (lokale Benachrichtigung)
+        case updateAvailableTitle
     }
 
     public static func text(_ key: Key, _ language: Language) -> String {
