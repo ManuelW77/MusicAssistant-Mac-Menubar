@@ -55,6 +55,10 @@ public enum L10n {
         case newPlaylistPlaceholder
         case create
 
+        // Playlist-Sections (AddToPlaylistView / SearchView)
+        case favoritePlaylists
+        case allPlaylists
+
         // MediaDetailView
         case tracksLoadFailed
 

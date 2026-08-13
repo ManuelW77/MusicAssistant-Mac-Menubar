@@ -38,6 +38,9 @@ extension L10n {
         .newPlaylistPlaceholder: (de: "Neue Playlist…", en: "New Playlist…"),
         .create: (de: "Erstellen", en: "Create"),
 
+        .favoritePlaylists: (de: "Favoriten", en: "Favorites"),
+        .allPlaylists: (de: "Alle Playlisten", en: "All Playlists"),
+
         .tracksLoadFailed: (de: "Titel konnten nicht geladen werden", en: "Failed to load tracks"),
 
         .mediaTypeTrack: (de: "Titel", en: "Tracks"),

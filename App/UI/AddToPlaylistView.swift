@@ -80,19 +80,48 @@ struct AddToPlaylistView: View {
                 )
                 .frame(height: 120)
             } else {
-                List(appState.playlists) { playlist in
-                    Button {
-                        Task { await add(to: playlist) }
-                    } label: {
-                        Text(playlist.name)
+                List {
+                    if !favoritePlaylists.isEmpty {
+                        Section {
+                            ForEach(favoritePlaylists) { playlist in
+                                playlistRow(playlist)
+                            }
+                        } header: {
+                            Text(appState.t(.favoritePlaylists))
+                                .fontWeight(.bold)
+                                .foregroundStyle(.yellow)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .disabled(actionState == .working)
+                    if !otherPlaylists.isEmpty {
+                        Section(appState.t(.allPlaylists)) {
+                            ForEach(otherPlaylists) { playlist in
+                                playlistRow(playlist)
+                            }
+                        }
+                    }
                 }
                 .frame(height: 160)
                 .listStyle(.plain)
             }
         }
+    }
+
+    private var favoritePlaylists: [Playlist] {
+        appState.playlists.filter(\.favorite)
+    }
+
+    private var otherPlaylists: [Playlist] {
+        appState.playlists.filter { !$0.favorite }
+    }
+
+    private func playlistRow(_ playlist: Playlist) -> some View {
+        Button {
+            Task { await add(to: playlist) }
+        } label: {
+            Text(playlist.name)
+        }
+        .buttonStyle(.plain)
+        .disabled(actionState == .working)
     }
 
     private var createSection: some View {
