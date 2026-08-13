@@ -267,7 +267,7 @@ public final class AppState {
     public func loadPlaylists() async throws {
         guard let client else { throw PlaylistError.noClient }
         let list: [Playlist] = try await client.send("music/playlists/library_items", args: NoArgs())
-        playlists = list
+        playlists = list.sorted { $0.favorite && !$1.favorite }
     }
 
     /// Legt eine neue Playlist an und übernimmt sie optimistisch in `playlists`.

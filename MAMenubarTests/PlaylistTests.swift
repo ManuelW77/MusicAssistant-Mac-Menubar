@@ -33,6 +33,36 @@ struct PlaylistTests {
         #expect(playlist.uri == nil)
     }
 
+    @Test("decodiert favorite: true aus JSON")
+    func decodesFavoritePlaylist() throws {
+        let json = #"{"item_id": "42", "provider": "builtin", "name": "Lieblingslieder", "favorite": true}"#
+        let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+        let playlist = try value.decode(Playlist.self)
+
+        #expect(playlist.favorite == true)
+    }
+
+    @Test("favorite defaultet auf false, wenn im JSON nicht vorhanden")
+    func defaultsFavoriteToFalse() throws {
+        let json = #"{"item_id": "7", "provider": "builtin", "name": "Ohne Favorite-Feld"}"#
+        let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+        let playlist = try value.decode(Playlist.self)
+
+        #expect(playlist.favorite == false)
+    }
+
+    @Test("Favoriten stehen nach Sortierung vorne, Rest behält Reihenfolge")
+    func sortsFavoritesFirst() throws {
+        let a = Playlist(itemId: "1", provider: "builtin", name: "A")
+        let b = Playlist(itemId: "2", provider: "builtin", name: "B", favorite: true)
+        let c = Playlist(itemId: "3", provider: "builtin", name: "C")
+        let d = Playlist(itemId: "4", provider: "builtin", name: "D", favorite: true)
+
+        let sorted = [a, b, c, d].sorted { $0.favorite && !$1.favorite }
+
+        #expect(sorted.map(\.name) == ["B", "D", "A", "C"])
+    }
+
     @Test("encoded AddPlaylistTracksArgs.dbPlaylistId als db_playlist_id")
     func encodesAddPlaylistTracksArgsSnakeCase() throws {
         let args = AddPlaylistTracksArgs(dbPlaylistId: "42", uris: ["library://track/1"])

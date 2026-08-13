@@ -13,6 +13,7 @@ public struct Playlist: Codable, Identifiable, Equatable, Sendable {
     public let provider: String
     public var name: String
     public var uri: String?
+    public var favorite: Bool = false
     var image: MediaImageRef? = nil
     var metadata: MediaThumbnail? = nil
     var providerMappings: [ProviderMappingRef]? = nil
@@ -31,10 +32,11 @@ public struct Playlist: Codable, Identifiable, Equatable, Sendable {
         providerMappings?.first?.providerDomain ?? provider
     }
 
-    public init(itemId: String, provider: String, name: String, uri: String? = nil) {
+    public init(itemId: String, provider: String, name: String, uri: String? = nil, favorite: Bool = false) {
         self.itemId = itemId
         self.provider = provider
         self.name = name
         self.uri = uri
+        self.favorite = favorite
     }
 }
