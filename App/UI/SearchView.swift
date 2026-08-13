@@ -176,7 +176,22 @@ struct SearchView: View {
                         systemImage: "music.note.list"
                     )
                 } else {
-                    List(appState.playlists) { PlaylistRowView(playlist: $0) }
+                    List {
+                        if !favoritePlaylists.isEmpty {
+                            Section {
+                                ForEach(favoritePlaylists) { PlaylistRowView(playlist: $0) }
+                            } header: {
+                                Text(appState.t(.favoritePlaylists))
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.yellow)
+                            }
+                        }
+                        if !otherPlaylists.isEmpty {
+                            Section(appState.t(.allPlaylists)) {
+                                ForEach(otherPlaylists) { PlaylistRowView(playlist: $0) }
+                            }
+                        }
+                    }
                 }
             }
             .navigationTitle("Playlists")
@@ -184,6 +199,14 @@ struct SearchView: View {
                 try? await appState.loadPlaylists()
             }
         }
+    }
+
+    private var favoritePlaylists: [Playlist] {
+        appState.playlists.filter(\.favorite)
+    }
+
+    private var otherPlaylists: [Playlist] {
+        appState.playlists.filter { !$0.favorite }
     }
 
     private func scheduleSearch(_ newValue: String) {
