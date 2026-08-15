@@ -1,4 +1,4 @@
-.PHONY: build test run verify app dmg release
+.PHONY: build test run verify app dmg release appstore
 
 APP_NAME := MA Menubar
 APP_BUNDLE := dist/$(APP_NAME).app
@@ -61,6 +61,49 @@ dmg:
 	hdiutil create -volname "$(APP_NAME)" -srcfolder dist/dmg-staging -ov -format UDZO "$(DMG_PATH)"
 	rm -rf dist/dmg-staging
 	@echo "Fertig: $(DMG_PATH)"
+
+# Signing-Identitäten für den Mac-App-Store-Vertriebsweg ("3rd Party Mac
+# Developer Application"/"Installer" aus dem Apple-Developer-Portal).
+# Standardmäßig auf die lokalen Zertifikate gesetzt, können bei Bedarf (z. B. in CI)
+# über Umgebungsvariablen überschrieben werden.
+MAS_APP_SIGN_IDENTITY ?= 3rd Party Mac Developer Application: Manuel Weiser (LWWM5RV3D9)
+MAS_INSTALLER_SIGN_IDENTITY ?= 3rd Party Mac Developer Installer: Manuel Weiser (LWWM5RV3D9)
+MAS_PROVISIONPROFILE ?= $(HOME)/Library/MobileDevice/Provisioning Profiles/4f950b8c-9be9-462c-95d1-3eb911e16d1a.provisionprofile
+MAS_APP_BUNDLE := dist/appstore/$(APP_NAME).app
+MAS_PKG_PATH := dist/appstore/$(APP_NAME).pkg
+
+# Baut die Mac-App-Store-Variante: gleiche Entitlements wie `make app` (App
+# Sandbox war hier schon immer aktiv), aber mit dem MAS_BUILD-Compile-Flag
+# (deaktiviert den GitHub-Update-Checker, siehe AppState.startUpdateChecks()/
+# SettingsView.swift), eingebettetem Provisioning Profile und Store-Distribution-
+# Zertifikaten statt dem Development- bzw. Developer-ID-Zertifikat.
+# Erzeugt ein .pkg statt .app+DMG, da App Store Connect .pkg-Uploads erwartet.
+appstore:
+	@if [ -z "$(MAS_APP_SIGN_IDENTITY)" ] || [ -z "$(MAS_INSTALLER_SIGN_IDENTITY)" ]; then \
+		echo "MAS_APP_SIGN_IDENTITY und MAS_INSTALLER_SIGN_IDENTITY müssen gesetzt sein (3rd Party Mac Developer Application/Installer aus dem Apple-Developer-Portal)."; \
+		exit 1; \
+	fi
+	swift build -c release -Xswiftc -DMAS_BUILD
+	rm -rf "$(MAS_APP_BUNDLE)"
+	mkdir -p "$(MAS_APP_BUNDLE)/Contents/MacOS"
+	cp .build/release/MAMenubar "$(MAS_APP_BUNDLE)/Contents/MacOS/MAMenubar"
+	cp App/Info.plist "$(MAS_APP_BUNDLE)/Contents/Info.plist"
+	if [ -f "$(MAS_PROVISIONPROFILE)" ]; then \
+		cp "$(MAS_PROVISIONPROFILE)" "$(MAS_APP_BUNDLE)/Contents/embedded.provisionprofile"; \
+	else \
+		echo "Warnung: Provisioning Profile '$(MAS_PROVISIONPROFILE)' nicht gefunden!"; \
+	fi
+	mkdir -p "$(MAS_APP_BUNDLE)/Contents/Resources"
+	if [ -f App/AppIcon.icns ]; then \
+		cp App/AppIcon.icns "$(MAS_APP_BUNDLE)/Contents/Resources/AppIcon.icns"; \
+	fi
+	if [ -f App/MenubarIcon.png ]; then \
+		cp App/MenubarIcon.png "$(MAS_APP_BUNDLE)/Contents/Resources/MenubarIcon.png"; \
+	fi
+	codesign --force --options runtime --timestamp --sign "$(MAS_APP_SIGN_IDENTITY)" --entitlements App/MAMenubar.entitlements "$(MAS_APP_BUNDLE)"
+	mkdir -p dist/appstore
+	productbuild --component "$(MAS_APP_BUNDLE)" /Applications --sign "$(MAS_INSTALLER_SIGN_IDENTITY)" "$(MAS_PKG_PATH)"
+	@echo "Fertig: $(MAS_PKG_PATH) — Upload z.B. via: xcrun altool --upload-app -f \"$(MAS_PKG_PATH)\" -t macos -u <Apple-ID> -p <App-spezifisches-Passwort>"
 
 # Version bumpen (Standard: patch) und Release via GitHub Actions anstoßen.
 # Nur vom main-Branch aus lauffähig, siehe scripts/release.sh.

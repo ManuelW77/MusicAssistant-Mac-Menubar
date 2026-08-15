@@ -24,5 +24,9 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>© Manuel Weiser</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.music</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>MA Menubar verbindet sich mit deinem Music-Assistant-Server im lokalen Netzwerk, um Wiedergabe zu steuern und Cover-Art zu laden.</string>
 </dict>
 </plist>

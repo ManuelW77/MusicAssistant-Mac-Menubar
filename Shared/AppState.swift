@@ -110,10 +110,19 @@ public final class AppState {
     /// MA-Verbindungs-Lifecycle, an Server-URL/Token gekoppelt — damit ein
     /// Neuverbinden (z.B. nach Speichern neuer Zugangsdaten) den Update-Status
     /// nicht zurücksetzt.
+    ///
+    /// No-op im Mac-App-Store-Build (`MAS_BUILD`, gesetzt via
+    /// `make appstore`/`-Xswiftc -DMAS_BUILD`): ein eigener Update-Mechanismus
+    /// außerhalb des Stores verstößt gegen Apples Review-Richtlinien, dort
+    /// übernimmt der Store selbst die Update-Benachrichtigung.
     public func startUpdateChecks() {
+        #if MAS_BUILD
+        return
+        #else
         guard updateCheckTask == nil else { return }
         UpdateNotifier.requestAuthorizationIfNeeded()
         updateCheckTask = Task { await runUpdateCheckLoop() }
+        #endif
     }
 
     private func runUpdateCheckLoop() async {
