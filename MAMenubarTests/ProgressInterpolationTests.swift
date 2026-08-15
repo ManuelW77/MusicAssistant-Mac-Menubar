@@ -81,4 +81,61 @@ struct ProgressInterpolationTests {
         )
         #expect(negative == 0.0)
     }
+
+    @Test("wählt spielenden Player unter mehreren Kandidaten")
+    func resolvedSelectionPrefersPlayingPlayer() {
+        let candidates = [
+            MAPlayer(playerId: "a", name: "A", playbackState: .idle),
+            MAPlayer(playerId: "b", name: "B", playbackState: .playing),
+            MAPlayer(playerId: "c", name: "C", playbackState: .idle)
+        ]
+        let selection = AppState.resolvedSelection(candidates: candidates, currentSelection: "a")
+        #expect(selection == "b")
+    }
+
+    @Test("wählt bei mehreren spielenden den ersten in Listenreihenfolge")
+    func resolvedSelectionPicksFirstPlayingOnMultiple() {
+        let candidates = [
+            MAPlayer(playerId: "a", name: "A", playbackState: .playing),
+            MAPlayer(playerId: "b", name: "B", playbackState: .playing)
+        ]
+        let selection = AppState.resolvedSelection(candidates: candidates, currentSelection: nil)
+        #expect(selection == "a")
+    }
+
+    @Test("behält gültige manuelle Auswahl, wenn keiner spielt")
+    func resolvedSelectionKeepsValidSelectionWhenNothingPlays() {
+        let candidates = [
+            MAPlayer(playerId: "a", name: "A", playbackState: .idle),
+            MAPlayer(playerId: "b", name: "B", playbackState: .paused)
+        ]
+        let selection = AppState.resolvedSelection(candidates: candidates, currentSelection: "b")
+        #expect(selection == "b")
+    }
+
+    @Test("fällt auf ersten Kandidaten zurück, wenn Auswahl ungültig ist")
+    func resolvedSelectionFallsBackWhenSelectionInvalid() {
+        let candidates = [
+            MAPlayer(playerId: "a", name: "A", playbackState: .idle),
+            MAPlayer(playerId: "b", name: "B", playbackState: .idle)
+        ]
+        let selection = AppState.resolvedSelection(candidates: candidates, currentSelection: "gone")
+        #expect(selection == "a")
+    }
+
+    @Test("fällt auf ersten Kandidaten zurück, wenn noch keine Auswahl besteht")
+    func resolvedSelectionFallsBackWhenNoSelection() {
+        let candidates = [
+            MAPlayer(playerId: "a", name: "A", playbackState: .idle),
+            MAPlayer(playerId: "b", name: "B", playbackState: .idle)
+        ]
+        let selection = AppState.resolvedSelection(candidates: candidates, currentSelection: nil)
+        #expect(selection == "a")
+    }
+
+    @Test("liefert nil bei leerer Kandidatenliste")
+    func resolvedSelectionReturnsNilForEmptyCandidates() {
+        let selection = AppState.resolvedSelection(candidates: [], currentSelection: "a")
+        #expect(selection == nil)
+    }
 }

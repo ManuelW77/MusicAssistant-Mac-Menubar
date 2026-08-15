@@ -210,12 +210,31 @@ public final class AppState {
             for player in list {
                 logCurrentMediaDebugInfo(for: player)
             }
-            if selectedPlayerID == nil {
-                selectedPlayerID = settings.allowedPlayerIDs.first ?? list.first?.playerId
-            }
+            selectedPlayerID = Self.resolvedSelection(candidates: availablePlayers, currentSelection: selectedPlayerID)
         } catch {
             connectionStatus = .error(L10n.playerListLoadFailed("\(error)", uiLanguage))
         }
+    }
+
+    /// Bestimmt die zu wählende Player-ID beim Neuladen der Player-Liste:
+    /// bevorzugt den ersten aktuell spielenden Player aus `candidates` (in
+    /// deterministischer Listenreihenfolge, nicht Set-Reihenfolge). Spielt
+    /// keiner, bleibt eine bestehende Auswahl unangetastet, solange sie noch
+    /// unter den Kandidaten ist — ein Refresh soll keine manuelle Auswahl
+    /// überschreiben, nur weil gerade nirgends etwas läuft. Ist die Auswahl
+    /// ungültig (z. B. Whitelist geändert) oder noch keine getroffen, fällt
+    /// sie auf den ersten Kandidaten zurück.
+    nonisolated static func resolvedSelection(
+        candidates: [MAPlayer],
+        currentSelection: String?
+    ) -> String? {
+        if let playing = candidates.first(where: { $0.playbackState == .playing }) {
+            return playing.playerId
+        }
+        if let currentSelection, candidates.contains(where: { $0.playerId == currentSelection }) {
+            return currentSelection
+        }
+        return candidates.first?.playerId
     }
 
     // Temporäre Diagnose, um zu klären, ob der Server duration/elapsedTime für
