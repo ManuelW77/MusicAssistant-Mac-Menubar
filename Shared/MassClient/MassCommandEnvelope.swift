@@ -134,16 +134,14 @@ public struct QueueIDArgs: Encodable, Sendable {
     public init(queueId: String) { self.queueId = queueId }
 }
 
-/// Für `config/players/save`. Crossfade ist weder der Bool-Befehl
-/// `player_queues/crossfade` noch das Queue-Config-Entry `crossfade_mode`
-/// (beide liefern auf diesem Server "Invalid command") — dieser Server läuft
-/// auf einem Stand vor music-assistant/server#4373 (21.06.2026), das
-/// Crossfade von einer Pro-Player- zu einer Pro-Queue-Einstellung verschoben
-/// hat. Auf diesem älteren Stand ist Crossfade noch ein Config-Entry
-/// `smart_fades_mode` (String-Enum `smart_crossfade`/`standard_crossfade`/
-/// `disabled`) auf der PLAYER-Konfiguration — verifiziert im Quellcode des
-/// Commits unmittelbar vor #4373 (`controllers/config.py`,
-/// `_get_default_player_config_entries`).
+/// Für `config/players/save` — Fallback für Server vor
+/// music-assistant/server#4373 (21.06.2026), das Crossfade von einer
+/// Pro-Player- zu einer Pro-Queue-Einstellung verschoben hat. Auf diesem
+/// älteren Stand ist Crossfade ein Config-Entry `smart_fades_mode`
+/// (String-Enum `smart_crossfade`/`standard_crossfade`/`disabled`) auf der
+/// PLAYER-Konfiguration. Ab Serverversion 2.10.0 (enthält #4373 bereits im
+/// frühesten Dev-Build) wird stattdessen `QueueCrossfadeArgs` verwendet,
+/// siehe `AppState.usesQueueCrossfadeAPI`.
 public struct PlayerConfigSaveArgs: Encodable, Sendable {
     public let playerId: String
     public let values: [String: String]
@@ -153,13 +151,25 @@ public struct PlayerConfigSaveArgs: Encodable, Sendable {
     }
 }
 
-/// Für `config/players/get_value` — Debug-Rückkanal, um nach dem Speichern
-/// zu bestätigen, was der Server tatsächlich persistiert hat.
+/// Für `config/players/get_value` — liest `smart_fades_mode` auf Servern vor
+/// #4373 (siehe `PlayerConfigSaveArgs`).
 public struct PlayerConfigGetValueArgs: Encodable, Sendable {
     public let playerId: String
     public let key: String
     public init(playerId: String, key: String) {
         self.playerId = playerId
         self.key = key
+    }
+}
+
+/// Für `player_queues/crossfade` — der Bool-Toggle-Befehl auf Servern ab
+/// 2.10.0 (music-assistant/server#4373), der Crossfade direkt auf der Queue
+/// (queue_id == player_id) statt der Player-Config setzt.
+public struct QueueCrossfadeArgs: Encodable, Sendable {
+    public let queueId: String
+    public let crossfadeEnabled: Bool
+    public init(queueId: String, crossfadeEnabled: Bool) {
+        self.queueId = queueId
+        self.crossfadeEnabled = crossfadeEnabled
     }
 }
