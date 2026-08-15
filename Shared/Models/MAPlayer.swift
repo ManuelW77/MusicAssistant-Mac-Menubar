@@ -60,6 +60,11 @@ public struct PlayerMedia: Codable, Equatable, Sendable {
     public let imageUrl: String?
     public let duration: Double?
     public let elapsedTime: Double?
+    /// Server-Zeitstempel (Unix-Sekunden) des letzten `elapsedTime`-Updates.
+    /// In MA ≥ 2.10.0 ändert sich `elapsedTime` nur noch bei Zustandsänderungen;
+    /// für einen live laufenden Balken muss der Client selbst zwischen den
+    /// Ankern interpolieren.
+    public let elapsedTimeLastUpdated: Double?
 
     public init(
         uri: String? = nil,
@@ -68,7 +73,8 @@ public struct PlayerMedia: Codable, Equatable, Sendable {
         album: String? = nil,
         imageUrl: String? = nil,
         duration: Double? = nil,
-        elapsedTime: Double? = nil
+        elapsedTime: Double? = nil,
+        elapsedTimeLastUpdated: Double? = nil
     ) {
         self.uri = uri
         self.title = title
@@ -77,5 +83,6 @@ public struct PlayerMedia: Codable, Equatable, Sendable {
         self.imageUrl = imageUrl
         self.duration = duration
         self.elapsedTime = elapsedTime
+        self.elapsedTimeLastUpdated = elapsedTimeLastUpdated
     }
 }

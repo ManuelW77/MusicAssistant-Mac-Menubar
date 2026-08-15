@@ -26,6 +26,18 @@ public enum MassEndpoint {
         return url
     }
 
+    /// Liefert die unauthentifizierte Server-Info-URL (`<baseURL>/info`).
+    public static func infoURL(baseURL: URL) throws -> URL {
+        guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+            throw EndpointError.invalidBaseURL
+        }
+        var path = components.path
+        while path.hasSuffix("/") { path.removeLast() }
+        components.path = path + "/info"
+        guard let url = components.url else { throw EndpointError.invalidBaseURL }
+        return url
+    }
+
     /// Löst eine vom Server gelieferte (ggf. relative) Bild-URL gegen die Server-Basis-URL auf.
     ///
     /// MA gibt für den `/imageproxy`-Pfad mitunter die intern konfigurierte
