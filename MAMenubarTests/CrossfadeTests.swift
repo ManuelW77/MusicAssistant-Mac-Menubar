@@ -36,13 +36,27 @@ struct CrossfadeTests {
             "active": true,
             "display_name": "Wohnzimmer",
             "available": true,
-            "items": 12
+            "items": 12,
+            "crossfade_enabled": true
         }
         """
         let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
         let queue = try value.decode(PlayerQueueInfo.self)
 
         #expect(queue.queueId == "player-1")
+        #expect(queue.crossfadeEnabled == true)
+    }
+
+    @Test("encoded QueueCrossfadeArgs als queue_id/crossfade_enabled")
+    func encodesQueueCrossfadeArgsSnakeCase() throws {
+        let args = QueueCrossfadeArgs(queueId: "player-1", crossfadeEnabled: true)
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        let data = try encoder.encode(args)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+
+        #expect(json?["queue_id"] as? String == "player-1")
+        #expect(json?["crossfade_enabled"] as? Bool == true)
     }
 
     @Test("encoded PlayerConfigGetValueArgs als player_id/key")

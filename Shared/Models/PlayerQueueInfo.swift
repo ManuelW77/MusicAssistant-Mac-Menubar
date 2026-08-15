@@ -1,16 +1,18 @@
 import Foundation
 
-/// Minimale Repräsentation von `player_queues/get` — dient hier nur noch als
-/// Existenz-/Diagnose-Check (siehe Tools/VerifyConnection). Der eigentliche
-/// Smart-Crossfade-Status wird NICHT von einem Queue-Feld gelesen: dieser
-/// Server liefert dafür kein "smart_fades_active" (fehlt komplett im JSON,
-/// nicht nur false) — die Quelle der Wahrheit ist stattdessen der
-/// gespeicherte Config-Wert "smart_fades_mode" über
-/// config/players/get_value, siehe AppState.loadCrossfadeEnabled().
+/// Repräsentation von `player_queues/get`. `crossfadeEnabled` bildet das
+/// Server-Feld `crossfade_enabled` auf `PlayerQueue` ab — anders als das
+/// früher fehlende `smart_fades_active` wird es auf Servern ab 2.10.0
+/// (music-assistant/server#4373) immer serialisiert und ist dort die Quelle
+/// der Wahrheit für den Crossfade-Status (siehe AppState.loadCrossfadeEnabled(),
+/// AppState.usesQueueCrossfadeAPI). Auf älteren Servern bleibt der Wert nil
+/// und AppState liest stattdessen die Player-Config (`smart_fades_mode`).
 public struct PlayerQueueInfo: Codable, Equatable, Sendable {
     public let queueId: String
+    public let crossfadeEnabled: Bool?
 
-    public init(queueId: String) {
+    public init(queueId: String, crossfadeEnabled: Bool? = nil) {
         self.queueId = queueId
+        self.crossfadeEnabled = crossfadeEnabled
     }
 }

@@ -595,31 +595,46 @@ public final class AppState {
         }
     }
 
-    // Weder "player_queues/crossfade" (Bool-Befehl) noch das neuere
-    // Queue-Config-Entry "crossfade_mode" existieren auf diesem Server
-    // ("Invalid command") — er läuft auf einem Stand vor
-    // music-assistant/server#4373 (21.06.2026), das Crossfade von einer
-    // Pro-Player- zu einer Pro-Queue-Einstellung verschoben hat. Auf diesem
-    // älteren Stand ist Crossfade das Config-Entry "smart_fades_mode" auf der
-    // PLAYER- (nicht Queue-)Konfiguration, verifiziert im Quellcode des
-    // Commits unmittelbar vor #4373. Der Button heißt bewusst
-    // "Smart Crossfade", daher togglet er zwischen "smart_crossfade" und
-    // "disabled".
+    // Ab Serverversion 2.10.0 (music-assistant/server#4373, 21.06.2026 —
+    // bereits im frühesten 2.10.0-Dev-Build enthalten, siehe
+    // usesQueueCrossfadeAPI) verschiebt der Server Crossfade von der
+    // Pro-Player- auf eine Pro-Queue-Einstellung: der alte Config-Weg
+    // ("smart_fades_mode" via config/players/*) ist dort nur noch eine
+    // einmalige Migrationsquelle, das eigentliche Setzen läuft über den
+    // dedizierten Bool-Befehl "player_queues/crossfade". Auf älteren Servern
+    // bleibt "smart_fades_mode" (Config-Entry auf der PLAYER-Konfiguration)
+    // die einzige Quelle. Der Button heißt bewusst "Smart Crossfade", daher
+    // togglet der alte Pfad zwischen "smart_crossfade" und "disabled".
     private static let crossfadeConfigKey = "smart_fades_mode"
     private static let crossfadeOnValue = "smart_crossfade"
     private static let crossfadeOffValue = "disabled"
 
+    /// Ob der Server bereits die Queue-scoped Crossfade-API
+    /// (music-assistant/server#4373) statt der alten Player-Config nutzt.
+    private var usesQueueCrossfadeAPI: Bool {
+        serverInfo.map { Self.isVersionAtLeast2_10_0($0.serverVersion) } ?? false
+    }
+
     /// Lädt den aktuellen Smart-Crossfade-Status des gewählten Players.
     ///
-    /// Liest bewusst den gespeicherten Config-Wert (`config/players/get_value`)
-    /// statt eines abgeleiteten Felds auf der Queue: `player_queues/get` liefert
-    /// auf diesem Server kein `smart_fades_active` — das Feld fehlt im JSON
-    /// komplett (nicht nur `false`), das tolerante Decoding las das bislang
-    /// immer stillschweigend als "aus", wodurch Ausschalten es tatsächlich
-    /// immer wieder einschaltete.
+    /// Auf Servern ab 2.10.0 liegt der Status auf der Queue selbst
+    /// (`player_queues/get` → `crossfade_enabled`). Auf älteren Servern liegt
+    /// er auf der Player-Config: `player_queues/get` liefert dort kein
+    /// `smart_fades_active` — das Feld fehlt im JSON komplett (nicht nur
+    /// `false`), das tolerante Decoding las das bislang immer stillschweigend
+    /// als "aus", wodurch Ausschalten es tatsächlich immer wieder einschaltete.
     public func loadCrossfadeEnabled() async throws -> Bool {
         guard let client else { throw QueueError.noClient }
         guard let playerId = selectedPlayerID else { throw QueueError.noPlayer }
+
+        if usesQueueCrossfadeAPI {
+            let queue: PlayerQueueInfo = try await client.send(
+                "player_queues/get",
+                args: QueueIDArgs(queueId: playerId)
+            )
+            return queue.crossfadeEnabled ?? false
+        }
+
         let raw = try await client.sendRaw(
             "config/players/get_value",
             args: PlayerConfigGetValueArgs(playerId: playerId, key: Self.crossfadeConfigKey)
@@ -629,27 +644,36 @@ public final class AppState {
     }
 
     /// Togglet Smart Crossfade für die Queue des gewählten Players und gibt
-    /// den neuen Status zurück. Ein Konfigurationswechsel dieses Entries löst
-    /// serverseitig zwar bei laufender Wiedergabe automatisch einen
-    /// Stop+Resume aus (requires_reload), das reicht aber laut Nutzeranforderung
-    /// nicht als alleinige Garantie, daher zusätzlich explizit pausieren +
-    /// fortsetzen.
+    /// den neuen Status zurück. Ein Konfigurationswechsel löst serverseitig
+    /// zwar bei laufender Wiedergabe automatisch einen Stop+Resume aus
+    /// (requires_reload), das reicht aber laut Nutzeranforderung nicht als
+    /// alleinige Garantie — für beide API-Pfade daher zusätzlich explizit
+    /// pausieren + fortsetzen.
     public func toggleCrossfade() async throws -> Bool {
         guard let client else { throw QueueError.noClient }
         guard let playerId = selectedPlayerID else { throw QueueError.noPlayer }
         let currentlyActive = try await loadCrossfadeEnabled()
-        let newMode = currentlyActive ? Self.crossfadeOffValue : Self.crossfadeOnValue
-        try await client.sendRaw(
-            "config/players/save",
-            args: PlayerConfigSaveArgs(playerId: playerId, values: [Self.crossfadeConfigKey: newMode])
-        )
+        let newState = !currentlyActive
+
+        if usesQueueCrossfadeAPI {
+            try await client.sendRaw(
+                "player_queues/crossfade",
+                args: QueueCrossfadeArgs(queueId: playerId, crossfadeEnabled: newState)
+            )
+        } else {
+            let newMode = newState ? Self.crossfadeOnValue : Self.crossfadeOffValue
+            try await client.sendRaw(
+                "config/players/save",
+                args: PlayerConfigSaveArgs(playerId: playerId, values: [Self.crossfadeConfigKey: newMode])
+            )
+        }
 
         if selectedPlayer?.playbackState == .playing {
             try await client.sendRaw("players/cmd/play_pause", args: PlayerIDArgs(playerId: playerId))
             try await Task.sleep(for: .milliseconds(300))
             try await client.sendRaw("players/cmd/play_pause", args: PlayerIDArgs(playerId: playerId))
         }
-        return !currentlyActive
+        return newState
     }
 }
 
