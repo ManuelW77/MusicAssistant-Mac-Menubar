@@ -13,6 +13,9 @@ struct MenuBarContentView: View {
     }
 
     private var playbackProgress: Double? {
+        if let interpolated = appState.displayedPlaybackProgress {
+            return interpolated
+        }
         guard let media = appState.selectedPlayer?.currentMedia,
               let duration = media.duration, duration > 0,
               let elapsed = media.elapsedTime else { return nil }

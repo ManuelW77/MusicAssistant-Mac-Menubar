@@ -53,15 +53,26 @@ public final class AppState {
     public private(set) var lastUpdateCheckDate: Date?
     public private(set) var isCheckingForUpdate = false
 
+    /// Server-Info von `GET /info`, falls erfolgreich abgerufen.
+    public private(set) var serverInfo: ServerInfo?
+    /// Für MA ≥ 2.10.0 wird der Fortschrittsbalken lokal interpoliert,
+    /// weil der Server keine fortlaufenden Positions-Ticks mehr sendet.
+    private var usesInterpolatedProgress = false
+    /// Aktuell angezeigter Fortschritt (0…1), berechnet aus dem letzten
+    /// Server-Anker oder `nil`, wenn keine Interpolation aktiv ist.
+    public private(set) var displayedPlaybackProgress: Double?
+
     public let settings: AppSettingsStore
     private var client: MassWebSocketClient?
     private var supervisorTask: Task<Void, Never>?
     private var reconnectAttempt = 0
     private var providerIconCache: [String: String] = [:]
     private var updateCheckTask: Task<Void, Never>?
+    private var progressTickTask: Task<Void, Never>?
     private static let updateCheckInterval: Double = 24 * 60 * 60
 
     private static let backoffSchedule: [Double] = [1, 2, 4, 8, 16, 30]
+    private static let progressTickInterval: Double = 0.5
 
     public init(settings: AppSettingsStore = AppSettingsStore()) {
         self.settings = settings
@@ -78,6 +89,10 @@ public final class AppState {
         supervisorTask = nil
         let current = client
         client = nil
+        stopProgressTick()
+        displayedPlaybackProgress = nil
+        usesInterpolatedProgress = false
+        serverInfo = nil
         connectionStatus = .disconnected
         Task { await current?.disconnect() }
     }
@@ -136,6 +151,10 @@ public final class AppState {
             connectionStatus = reconnectAttempt == 0 ? .connecting : .reconnecting(attempt: reconnectAttempt)
             let newClient = MassWebSocketClient()
             do {
+                serverInfo = await fetchServerInfo(baseURL: baseURL)
+                usesInterpolatedProgress = serverInfo.map { Self.isVersionAtLeast2_10_0($0.serverVersion) } ?? false
+                if usesInterpolatedProgress { startProgressTick() }
+
                 try await newClient.connect(baseURL: baseURL, token: token)
                 client = newClient
                 connectionStatus = .connected
@@ -147,6 +166,10 @@ public final class AppState {
             }
 
             client = nil
+            stopProgressTick()
+            displayedPlaybackProgress = nil
+            usesInterpolatedProgress = false
+            serverInfo = nil
             if Task.isCancelled { break }
             let delayIndex = min(reconnectAttempt, Self.backoffSchedule.count - 1)
             reconnectAttempt += 1
@@ -170,6 +193,7 @@ public final class AppState {
             } else {
                 players.append(player)
             }
+            updateDisplayedPlaybackProgress()
         case .playerRemoved:
             guard let removedId = event.objectId else { return }
             players.removeAll { $0.playerId == removedId }
@@ -202,7 +226,88 @@ public final class AppState {
         guard let media = player.currentMedia else { return }
         let durationText = media.duration.map { "\($0)" } ?? "nil"
         let elapsedText = media.elapsedTime.map { "\($0)" } ?? "nil"
-        print("AppState: \(player.name) — duration=\(durationText) elapsed=\(elapsedText)")
+        let updatedText = media.elapsedTimeLastUpdated.map { "\($0)" } ?? "nil"
+        print("AppState: \(player.name) — duration=\(durationText) elapsed=\(elapsedText) updated=\(updatedText)")
+    }
+
+    // MARK: - Server-Version & Fortschritts-Interpolation
+
+    /// Ruft die unauthentifizierte Server-Info ab. Fehler werden still
+    /// ignoriert, damit auch ältere Server ohne `/info`-Endpoint weiterlaufen.
+    private func fetchServerInfo(baseURL: URL) async -> ServerInfo? {
+        do {
+            let url = try MassEndpoint.infoURL(baseURL: baseURL)
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            return try decoder.decode(ServerInfo.self, from: data)
+        } catch {
+            return nil
+        }
+    }
+
+    /// Vergleicht eine MA-Versionsnummer mit der 2.10.0-Grenze.
+    /// Suffixe wie `b3`, `rc1` etc. werden ignoriert, damit auch Beta-Builds
+    /// der 2.10.x-Reihe als „neu“ gelten.
+    nonisolated static func isVersionAtLeast2_10_0(_ version: String) -> Bool {
+        guard let parsed = parseVersion(version) else { return false }
+        return parsed >= (2, 10, 0)
+    }
+
+    nonisolated private static func parseVersion(_ version: String) -> (major: Int, minor: Int, patch: Int)? {
+        let prefix = version.prefix { $0.isNumber || $0 == "." }
+        var parts = prefix.split(separator: ".", omittingEmptySubsequences: false).compactMap { Int($0) }
+        while parts.count < 3 { parts.append(0) }
+        guard parts.count >= 3 else { return nil }
+        return (parts[0], parts[1], parts[2])
+    }
+
+    private func startProgressTick() {
+        guard progressTickTask == nil else { return }
+        progressTickTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                self.updateDisplayedPlaybackProgress()
+                try? await Task.sleep(for: .seconds(Self.progressTickInterval))
+            }
+        }
+    }
+
+    private func stopProgressTick() {
+        progressTickTask?.cancel()
+        progressTickTask = nil
+    }
+
+    private func updateDisplayedPlaybackProgress() {
+        guard usesInterpolatedProgress,
+              let media = selectedPlayer?.currentMedia,
+              let duration = media.duration, duration > 0,
+              let elapsed = media.elapsedTime,
+              let lastUpdated = media.elapsedTimeLastUpdated else {
+            displayedPlaybackProgress = nil
+            return
+        }
+        let isPlaying = selectedPlayer?.playbackState == .playing
+        displayedPlaybackProgress = Self.interpolatedProgress(
+            elapsedTime: elapsed,
+            elapsedTimeLastUpdated: lastUpdated,
+            duration: duration,
+            isPlaying: isPlaying,
+            now: Date().timeIntervalSince1970
+        )
+    }
+
+    /// Reine Berechnung des interpolierten Fortschritts (0…1), damit sie
+    /// unit-getestet werden kann, ohne `@MainActor`/`@Observable` aufzubauen.
+    nonisolated static func interpolatedProgress(
+        elapsedTime: Double,
+        elapsedTimeLastUpdated: Double,
+        duration: Double,
+        isPlaying: Bool,
+        now: Double
+    ) -> Double {
+        let position = elapsedTime + (isPlaying ? (now - elapsedTimeLastUpdated) : 0)
+        return min(max(position / duration, 0), 1)
     }
 
     public func playPause() { sendPlayerCommand("players/cmd/play_pause") }
