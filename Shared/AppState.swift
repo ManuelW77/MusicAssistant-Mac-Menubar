@@ -74,9 +74,13 @@ public final class AppState {
     private static let backoffSchedule: [Double] = [1, 2, 4, 8, 16, 30]
     private static let progressTickInterval: Double = 0.5
 
-    public init(settings: AppSettingsStore = AppSettingsStore()) {
+    public init(settings: AppSettingsStore) {
         self.settings = settings
         self.selectedPlayerID = settings.lastSelectedPlayerID
+    }
+
+    public convenience init() {
+        self.init(settings: AppSettingsStore())
     }
 
     public func start() {

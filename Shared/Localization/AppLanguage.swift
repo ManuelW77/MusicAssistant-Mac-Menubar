@@ -3,6 +3,7 @@ import Foundation
 /// Persistierbare Sprachwahl des Nutzers. `.system` wird nie direkt zur
 /// Textauflösung verwendet, sondern über `resolved(preferredLanguages:)` in
 /// eine konkrete `L10n.Language` übersetzt.
+@frozen
 public enum AppLanguage: String, CaseIterable, Sendable {
     case system
     case de
