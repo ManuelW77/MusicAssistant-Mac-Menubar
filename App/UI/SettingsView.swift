@@ -97,6 +97,10 @@ struct SettingsView: View {
                 LabeledContent(appState.t(.developer), value: "Manuel Weiser")
                 Link(appState.t(.githubRepo), destination: Self.repositoryURL)
 
+                // Im Mac-App-Store-Build (MAS_BUILD) übernimmt der Store die
+                // Update-Benachrichtigung — ein eigener Update-Check/Prompt
+                // ist dort nicht zulässig, siehe AppState.startUpdateChecks().
+                #if !MAS_BUILD
                 HStack {
                     Button(appState.t(.checkForUpdates)) {
                         Task { await appState.checkForUpdate() }
@@ -111,12 +115,14 @@ struct SettingsView: View {
 
                     updateStatusLabel
                 }
+                #endif
             }
         }
         .formStyle(.grouped)
         .padding(.top, 8)
     }
 
+    #if !MAS_BUILD
     @ViewBuilder
     private var updateStatusLabel: some View {
         if appState.isCheckingForUpdate {
@@ -142,6 +148,7 @@ struct SettingsView: View {
                 .font(.caption)
         }
     }
+    #endif
 
     private var launchAtLoginBinding: Binding<Bool> {
         Binding(
