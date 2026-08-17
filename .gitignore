@@ -13,10 +13,6 @@ xcuserdata/
 DerivedData/
 *.xcuserstate
 
-# Separates Xcode-Scaffold-Projekt mit eigenem .git (nur lokal, u.a. für
-# Icon-Validierung angelegt) — hat kein .gitmodules-Pendant, würde bei
-# `git add -A` sonst versehentlich als kaputter Submodule-Gitlink landen.
-/Music Assistant Menubar/
 /scripts/
 
 # macOS
