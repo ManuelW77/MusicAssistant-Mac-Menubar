@@ -110,3 +110,68 @@ git push github "$NEW_TAG"
 echo ""
 echo "Fertig. $NEW_TAG gepusht — Build/Sign/Notarize läuft:"
 echo "  https://github.com/ManuelW77/MusicAssistant-Mac-Menubar/actions"
+
+# --- Xcode-Projekt-Version mitziehen (best-effort, bricht das Release nicht ab) ---
+# Das separate Xcode-Projekt in ../MA-Mac-Menubar-xCode (eigenes Git-Repo,
+# bindet denselben Sourcecode per relativem Pfad ein, siehe dessen
+# project.pbxproj) pflegt seine eigene MARKETING_VERSION/CURRENT_PROJECT_VERSION
+# unabhängig von den Git-Tags hier. Wir aktualisieren nur die Datei lokal
+# (kein commit/push) und identifizieren die Build-Configs des App-Targets
+# über ihre IDs aus der "Build configuration list"-Sektion, statt naiv jede
+# MARKETING_VERSION-Zeile zu ersetzen — das Projekt enthält 2 weitere Targets
+# (MAMenubarLib, MAMenubarLibTests), deren Versionsfelder unangetastet
+# bleiben müssen.
+sync_xcode_project_version() {
+    local xcode_dir="../MA-Mac-Menubar-xCode"
+    local target_name="Music Assistant Menubar"
+    local pbxproj="$xcode_dir/$target_name.xcodeproj/project.pbxproj"
+
+    if [ ! -f "$pbxproj" ]; then
+        echo "Warnung: Xcode-Projekt nicht gefunden unter '$pbxproj' – Versions-Sync übersprungen." >&2
+        return
+    fi
+
+    if [ -n "$(git -C "$xcode_dir" status --porcelain 2>/dev/null)" ]; then
+        echo "Warnung: '$xcode_dir' hat bereits uncommitted Änderungen – Versions-Sync übersprungen, um sie nicht zu vermischen." >&2
+        return
+    fi
+
+    local config_list_line debug_id release_id
+    # Der Name kommt zweimal vor: einmal als reine Referenz
+    # ("buildConfigurationList = ID /* ... */;", z.B. am PBXNativeTarget
+    # selbst) und einmal als die eigentliche Block-Definition ("ID /* ... */
+    # = {"). Nur Letztere enthält die Debug/Release-IDs, daher gezielt auf
+    # "= {" am Zeilenende matchen statt nur auf den Namen.
+    config_list_line=$(grep -n "Build configuration list for PBXNativeTarget \"$target_name\" \\*/ = {" "$pbxproj" | head -n1 | cut -d: -f1)
+    if [ -z "$config_list_line" ]; then
+        echo "Warnung: Build-Configuration-Liste für Target '$target_name' nicht gefunden – Versions-Sync übersprungen." >&2
+        return
+    fi
+    debug_id=$(sed -n "$((config_list_line + 3))p" "$pbxproj" | grep -o '[0-9A-Fa-f]\{24\}')
+    release_id=$(sed -n "$((config_list_line + 4))p" "$pbxproj" | grep -o '[0-9A-Fa-f]\{24\}')
+    if [ -z "$debug_id" ] || [ -z "$release_id" ]; then
+        echo "Warnung: Debug/Release-Build-Config-IDs für '$target_name' nicht gefunden – Versions-Sync übersprungen." >&2
+        return
+    fi
+
+    awk -v debug_id="$debug_id" -v release_id="$release_id" -v new_version="$NEW_VERSION" '
+        $0 ~ debug_id " /\\* Debug configuration.*= \\{" { in_block = 1 }
+        $0 ~ release_id " /\\* Release configuration.*= \\{" { in_block = 1 }
+        in_block && /MARKETING_VERSION = / {
+            sub(/MARKETING_VERSION = [^;]*;/, "MARKETING_VERSION = " new_version ";")
+        }
+        in_block && /CURRENT_PROJECT_VERSION = / {
+            if (match($0, /[0-9]+/)) {
+                old = substr($0, RSTART, RLENGTH)
+                sub(/CURRENT_PROJECT_VERSION = [0-9]+;/, "CURRENT_PROJECT_VERSION = " (old + 1) ";")
+            }
+        }
+        /name = (Debug|Release);/ { in_block = 0 }
+        { print }
+    ' "$pbxproj" > "$pbxproj.tmp" && mv "$pbxproj.tmp" "$pbxproj"
+
+    echo "Xcode-Projekt-Version aktualisiert: $pbxproj (MARKETING_VERSION=$NEW_VERSION, CURRENT_PROJECT_VERSION +1)."
+    echo "Bitte in Xcode/git prüfen und dort selbst committen."
+}
+
+sync_xcode_project_version

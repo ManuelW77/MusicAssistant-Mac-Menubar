@@ -53,13 +53,18 @@ public final class AppState {
     public private(set) var lastUpdateCheckDate: Date?
     public private(set) var isCheckingForUpdate = false
 
-    /// Server-Info von `GET /info`, falls erfolgreich abgerufen.
+    /// Server-Info von `GET /info`, für `usesQueueCrossfadeAPI` unten.
     public private(set) var serverInfo: ServerInfo?
-    /// Für MA ≥ 2.10.0 wird der Fortschrittsbalken lokal interpoliert,
-    /// weil der Server keine fortlaufenden Positions-Ticks mehr sendet.
-    private var usesInterpolatedProgress = false
-    /// Aktuell angezeigter Fortschritt (0…1), berechnet aus dem letzten
-    /// Server-Anker oder `nil`, wenn keine Interpolation aktiv ist.
+    /// Aktuell angezeigter Fortschritt (0…1), lokal aus dem letzten
+    /// Server-Anker hochgezählt, oder `nil`, wenn `currentMedia` (noch) kein
+    /// `elapsedTimeLastUpdated` liefert — die UI fällt dann automatisch auf
+    /// die statische Berechnung zurück (siehe MenuBarContentView.playbackProgress).
+    /// Der Tick lief früher nur ab gemeldeter Serverversion ≥2.10.0, aber
+    /// Dev-/Nightly-Server melden `server_version: "0.0.0"` (die echte Version
+    /// wird bei music-assistant/server erst im Release-Build gesetzt), wodurch
+    /// der Check dort fälschlich "zu alt" ergab und die Anzeige einfror. Der
+    /// Tick läuft daher jetzt immer; ob interpoliert wird, entscheidet sich
+    /// rein an den Daten.
     public private(set) var displayedPlaybackProgress: Double?
 
     public let settings: AppSettingsStore
@@ -95,7 +100,6 @@ public final class AppState {
         client = nil
         stopProgressTick()
         displayedPlaybackProgress = nil
-        usesInterpolatedProgress = false
         serverInfo = nil
         connectionStatus = .disconnected
         Task { await current?.disconnect() }
@@ -165,8 +169,7 @@ public final class AppState {
             let newClient = MassWebSocketClient()
             do {
                 serverInfo = await fetchServerInfo(baseURL: baseURL)
-                usesInterpolatedProgress = serverInfo.map { Self.isVersionAtLeast2_10_0($0.serverVersion) } ?? false
-                if usesInterpolatedProgress { startProgressTick() }
+                startProgressTick()
 
                 try await newClient.connect(baseURL: baseURL, token: token)
                 client = newClient
@@ -181,7 +184,6 @@ public final class AppState {
             client = nil
             stopProgressTick()
             displayedPlaybackProgress = nil
-            usesInterpolatedProgress = false
             serverInfo = nil
             if Task.isCancelled { break }
             let delayIndex = min(reconnectAttempt, Self.backoffSchedule.count - 1)
@@ -311,8 +313,7 @@ public final class AppState {
     }
 
     private func updateDisplayedPlaybackProgress() {
-        guard usesInterpolatedProgress,
-              let media = selectedPlayer?.currentMedia,
+        guard let media = selectedPlayer?.currentMedia,
               let duration = media.duration, duration > 0,
               let elapsed = media.elapsedTime,
               let lastUpdated = media.elapsedTimeLastUpdated else {
