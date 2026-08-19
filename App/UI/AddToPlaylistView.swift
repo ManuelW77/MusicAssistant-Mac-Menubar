@@ -2,8 +2,13 @@ import SwiftUI
 import MAMenubarLib
 
 struct AddToPlaylistView: View {
+    /// Schließt die Ansicht. Bewusst ein Callback statt `@Environment(\.dismiss)`:
+    /// Diese View ist keine eigene Präsentation (Sheet/Fenster/Popover) mehr,
+    /// sondern nur ein Inhaltswechsel innerhalb des Menüleisten-Popovers —
+    /// siehe Kommentar in MenuBarContentView.
+    let onClose: () -> Void
+
     @Environment(AppState.self) private var appState
-    @Environment(\.dismiss) private var dismiss
 
     @State private var loadState: LoadState = .loading
     @State private var actionState: ActionState = .idle
@@ -32,20 +37,37 @@ struct AddToPlaylistView: View {
             actionStatusLabel
         }
         .padding(14)
-        .frame(width: 280)
+        // Füllt die volle Höhe, die MenuBarContentView per .overlay() über
+        // dem unsichtbaren playerContent-Platzhalter anbietet (sonst bliebe
+        // trotz gleich hohem Popover ungenutzter Platz unterhalb von
+        // createSection) — die ScrollView in `content` wächst entsprechend
+        // mit (.frame(maxHeight: .infinity) dort statt einer festen Kappung).
+        .frame(maxHeight: .infinity, alignment: .top)
         .task {
             await load()
         }
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(appState.t(.addToPlaylist))
-                .font(.headline)
-            Text(trackDescription)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+        HStack(alignment: .top, spacing: 8) {
+            Button(action: onClose) {
+                Image(systemName: "chevron.left")
+                    .font(.headline)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(appState.t(.back))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(appState.t(.addToPlaylist))
+                    .font(.headline)
+                Text(trackDescription)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
         }
     }
 
@@ -80,28 +102,43 @@ struct AddToPlaylistView: View {
                 )
                 .frame(height: 120)
             } else {
-                List {
-                    if !favoritePlaylists.isEmpty {
-                        Section {
+                // Bewusst ScrollView + VStack statt List: SwiftUIs List-Zellen
+                // (CellHostingView) bringen in diesem verschachtelten Popover
+                // ihre Gesture-Erkennung durcheinander — nach dem ersten
+                // Hinzufügen blieb ein Recognizer im "Began"-Zustand hängen
+                // ("Stuck gesture recognizers detected"), woraufhin SwiftUI
+                // alle weiteren Gesten ignorierte und ein zweites Hinzufügen
+                // unmöglich war. Ohne List-Zellenebene tritt das nicht auf.
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 2) {
+                        if !favoritePlaylists.isEmpty {
+                            Text(appState.t(.favoritePlaylists))
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.yellow)
                             ForEach(favoritePlaylists) { playlist in
                                 playlistRow(playlist)
                             }
-                        } header: {
-                            Text(appState.t(.favoritePlaylists))
-                                .fontWeight(.bold)
-                                .foregroundStyle(.yellow)
                         }
-                    }
-                    if !otherPlaylists.isEmpty {
-                        Section(appState.t(.allPlaylists)) {
+                        if !otherPlaylists.isEmpty {
+                            Text(appState.t(.allPlaylists))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, favoritePlaylists.isEmpty ? 0 : 6)
                             ForEach(otherPlaylists) { playlist in
                                 playlistRow(playlist)
                             }
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(height: 160)
-                .listStyle(.plain)
+                // Füllt die von body() über .frame(maxHeight: .infinity)
+                // bereitgestellte Resthöhe komplett aus, statt bei fester
+                // Kappung ungenutzten Platz darunter zu lassen — das Popover
+                // selbst wächst dadurch nicht weiter (dessen Höhe kommt vom
+                // unsichtbaren playerContent-Platzhalter in
+                // MenuBarContentView, nicht von hier).
+                .frame(maxHeight: .infinity)
             }
         }
     }
@@ -119,6 +156,13 @@ struct AddToPlaylistView: View {
             Task { await add(to: playlist) }
         } label: {
             Text(playlist.name)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 3)
+                .padding(.horizontal, 4)
+                // Ohne das wäre nur der Text selbst klickbar, nicht die
+                // ganze Zeilenbreite (in der List übernahm das die Zelle).
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(actionState == .working)
@@ -168,7 +212,7 @@ struct AddToPlaylistView: View {
             try await appState.addCurrentTrackToPlaylist(playlist)
             actionState = .created(playlist.name)
             try? await Task.sleep(for: .seconds(1))
-            dismiss()
+            onClose()
         } catch {
             actionState = .failed("\(error)")
         }
@@ -183,7 +227,7 @@ struct AddToPlaylistView: View {
             newPlaylistName = ""
             actionState = .created(playlist.name)
             try? await Task.sleep(for: .seconds(1))
-            dismiss()
+            onClose()
         } catch {
             actionState = .failed("\(error)")
         }

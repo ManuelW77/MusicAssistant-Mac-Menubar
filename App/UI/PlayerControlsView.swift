@@ -24,10 +24,10 @@ struct PlayerControlsView: View {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .font(.title2)
                         .frame(width: 44, height: 44)
-                        .opacity(isPlayPauseCommandPending ? 0.4 : 1.0)
+                        .opacity(isPlayPauseCommandPending ? 0.2 : 1.0)
                         .animation(
                             isPlayPauseCommandPending
-                                ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
+                                ? .easeInOut(duration: 0.45).repeatForever(autoreverses: true)
                                 : .easeInOut(duration: 0.2),
                             value: isPlayPauseCommandPending
                         )
