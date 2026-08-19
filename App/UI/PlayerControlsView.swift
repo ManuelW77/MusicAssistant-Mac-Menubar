@@ -3,6 +3,7 @@ import MAMenubarLib
 
 struct PlayerControlsView: View {
     let playbackState: PlaybackState?
+    let isPlayPauseCommandPending: Bool
     let onPrevious: () -> Void
     let onPlayPause: () -> Void
     let onNext: () -> Void
@@ -23,6 +24,13 @@ struct PlayerControlsView: View {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .font(.title2)
                         .frame(width: 44, height: 44)
+                        .opacity(isPlayPauseCommandPending ? 0.4 : 1.0)
+                        .animation(
+                            isPlayPauseCommandPending
+                                ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
+                                : .easeInOut(duration: 0.2),
+                            value: isPlayPauseCommandPending
+                        )
                 }
                 .buttonStyle(.glassProminent)
 

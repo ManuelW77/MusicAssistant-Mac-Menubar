@@ -38,6 +38,9 @@ public final class AppState {
         didSet {
             guard selectedPlayerID != oldValue else { return }
             settings.lastSelectedPlayerID = selectedPlayerID
+            // Ein Pending-Zustand gehört zur vorherigen Auswahl — soll nicht
+            // optisch am neu gewählten Player weiterlaufen.
+            clearPlayPausePending()
         }
     }
 
@@ -52,6 +55,16 @@ public final class AppState {
     public private(set) var updateInfo: UpdateChecker.UpdateInfo?
     public private(set) var lastUpdateCheckDate: Date?
     public private(set) var isCheckingForUpdate = false
+
+    /// Rein lokaler Pending-Zustand für den Play/Pause-Button: der Server
+    /// meldet keinen "buffering"-Zwischenstatus (PlaybackState kennt nur
+    /// idle/paused/playing/unknown), daher wird hier optimistisch beim
+    /// Klick gesetzt und zurückgesetzt, sobald das nächste playerUpdated-
+    /// Event für den gewählten Player ankommt (oder spätestens nach
+    /// playPauseTimeout als Absicherung gegen ein ausbleibendes Event).
+    public private(set) var isPlayPauseCommandPending = false
+    private var playPauseTimeoutTask: Task<Void, Never>?
+    private static let playPauseTimeout: Double = 4
 
     /// Server-Info von `GET /info`, für `usesQueueCrossfadeAPI` unten.
     public private(set) var serverInfo: ServerInfo?
@@ -102,6 +115,7 @@ public final class AppState {
         displayedPlaybackProgress = nil
         serverInfo = nil
         connectionStatus = .disconnected
+        clearPlayPausePending()
         Task { await current?.disconnect() }
     }
 
@@ -207,6 +221,9 @@ public final class AppState {
                 players[index] = player
             } else {
                 players.append(player)
+            }
+            if player.playerId == selectedPlayerID {
+                clearPlayPausePending()
             }
             updateDisplayedPlaybackProgress()
         case .playerRemoved:
@@ -343,7 +360,16 @@ public final class AppState {
         return min(max(position / duration, 0), 1)
     }
 
-    public func playPause() { sendPlayerCommand("players/cmd/play_pause") }
+    public func playPause() {
+        // Guard hier statt nur in sendPlayerCommand: sonst würde der Pending-
+        // Flag auch ohne Verbindung/Auswahl gesetzt und bliebe bis zum
+        // Timeout fälschlich sichtbar, obwohl gar kein Befehl gesendet wird.
+        guard client != nil, selectedPlayerID != nil else { return }
+        isPlayPauseCommandPending = true
+        armPlayPauseTimeout()
+        sendPlayerCommand("players/cmd/play_pause")
+    }
+
     public func next() { sendPlayerCommand("players/cmd/next") }
     public func previous() { sendPlayerCommand("players/cmd/previous") }
 
@@ -352,6 +378,21 @@ public final class AppState {
         Task {
             try? await client.sendRaw(command, args: PlayerIDArgs(playerId: playerId))
         }
+    }
+
+    private func armPlayPauseTimeout() {
+        playPauseTimeoutTask?.cancel()
+        playPauseTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.playPauseTimeout))
+            guard !Task.isCancelled else { return }
+            self?.isPlayPauseCommandPending = false
+        }
+    }
+
+    private func clearPlayPausePending() {
+        isPlayPauseCommandPending = false
+        playPauseTimeoutTask?.cancel()
+        playPauseTimeoutTask = nil
     }
 
     public func setVolume(_ level: Int) {

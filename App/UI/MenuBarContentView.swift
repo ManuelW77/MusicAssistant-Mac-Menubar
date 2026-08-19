@@ -93,6 +93,7 @@ struct MenuBarContentView: View {
                 .popover(isPresented: $showAddToPlaylist) {
                     AddToPlaylistView()
                         .environment(appState)
+                        .dismissPopoverOnOutsideClick(isPresented: $showAddToPlaylist)
                 }
 
                 Button {
@@ -107,6 +108,7 @@ struct MenuBarContentView: View {
 
             PlayerControlsView(
                 playbackState: appState.selectedPlayer?.playbackState,
+                isPlayPauseCommandPending: appState.isPlayPauseCommandPending,
                 onPrevious: appState.previous,
                 onPlayPause: appState.playPause,
                 onNext: appState.next
