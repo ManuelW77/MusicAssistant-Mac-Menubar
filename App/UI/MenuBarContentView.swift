@@ -234,7 +234,23 @@ private struct CachedCoverImage: View {
             }
         }
         .task(id: url) {
-            guard image == nil, let url else { return }
+            // Kein "image == nil"-Guard mehr: Diese View-Instanz bleibt beim
+            // Wechsel eines Songs UNVERÄNDERT bestehen (playerContent wird
+            // nicht neu gebaut, solange das Popover offen bleibt) — nur die
+            // `url` ändert sich, wodurch `.task(id:)` neu anläuft. Ein Guard
+            // auf das ALTE `image` hätte den Task dann sofort wieder
+            // verlassen, bevor er das NEUE Cover überhaupt nachlädt — genau
+            // das ließ das Cover auf dem zuletzt geladenen Titel hängen, bis
+            // die View durch einen kompletten Neuaufbau (Popover schließen
+            // + neu öffnen) ihre Identität verlor und `init` erneut griff.
+            guard let url else {
+                image = nil
+                return
+            }
+            if let cached = CoverImageCache.shared.image(for: url) {
+                image = cached
+                return
+            }
             do {
                 let (data, _) = try await URLSession.shared.data(from: url)
                 guard let loaded = NSImage(data: data) else { return }
