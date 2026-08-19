@@ -28,6 +28,7 @@ extension L10n {
         .noPlayback: (de: "Keine Wiedergabe", en: "No playback"),
         .addToPlaylist: (de: "Zu Playlist hinzufügen", en: "Add to Playlist"),
         .search: (de: "Suche", en: "Search"),
+        .back: (de: "Zurück", en: "Back"),
 
         .noPlayersAllowed: (de: "Keine Player freigegeben – siehe Einstellungen", en: "No players allowed – see Settings"),
 

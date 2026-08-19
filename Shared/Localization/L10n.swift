@@ -43,6 +43,7 @@ public enum L10n {
         case noPlayback
         case addToPlaylist
         case search
+        case back
 
         // PlayerPickerView
         case noPlayersAllowed

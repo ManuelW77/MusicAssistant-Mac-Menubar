@@ -10,6 +10,7 @@ import MAMenubarLib
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let appState = AppState()
+    private let popoverNavigationState = PopoverNavigationState()
 
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
@@ -113,7 +114,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         statusItem = item
 
-        let hostingController = NSHostingController(rootView: MenuBarContentView().environment(appState))
+        let hostingController = NSHostingController(
+            rootView: MenuBarContentView()
+                .environment(appState)
+                .environment(popoverNavigationState)
+        )
         hostingController.sizingOptions = .preferredContentSize
 
         let popover = NSPopover()
@@ -153,6 +158,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Apple-Doku auch aktiviert kein Dock-Icon, das
             // Policy-Umschalten dort ist es, was das Dock-Icon erzeugt,
             // nicht NSApp.activate() allein.
+            popoverNavigationState.notifyWillOpen()
             NSApp.activate(ignoringOtherApps: true)
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             // Ohne das bleibt das Popover-Fenster "nicht key" (Controls wie
