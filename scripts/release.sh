@@ -115,12 +115,15 @@ echo "  https://github.com/ManuelW77/MusicAssistant-Mac-Menubar/actions"
 # Das separate Xcode-Projekt in ../MA-Mac-Menubar-xCode (eigenes Git-Repo,
 # bindet denselben Sourcecode per relativem Pfad ein, siehe dessen
 # project.pbxproj) pflegt seine eigene MARKETING_VERSION/CURRENT_PROJECT_VERSION
-# unabhängig von den Git-Tags hier. Wir aktualisieren nur die Datei lokal
-# (kein commit/push) und identifizieren die Build-Configs des App-Targets
-# über ihre IDs aus der "Build configuration list"-Sektion, statt naiv jede
-# MARKETING_VERSION-Zeile zu ersetzen — das Projekt enthält 2 weitere Targets
-# (MAMenubarLib, MAMenubarLibTests), deren Versionsfelder unangetastet
-# bleiben müssen.
+# unabhängig von den Git-Tags hier. Wir identifizieren die Build-Configs des
+# App-Targets über ihre IDs aus der "Build configuration list"-Sektion, statt
+# naiv jede MARKETING_VERSION-Zeile zu ersetzen — das Projekt enthält 2
+# weitere Targets (MAMenubarLib, MAMenubarLibTests), deren Versionsfelder
+# unangetastet bleiben müssen. Die Version wird IMMER gesetzt, unabhängig vom
+# sonstigen Git-Status des Xcode-Repos (die Version muss stets zum
+# tatsächlichen Release-Build passen) — anschließend wird gezielt nur die
+# pbxproj-Datei committet und gepusht, andere ggf. offene Änderungen in
+# diesem Repo bleiben davon unberührt und uncommitted.
 sync_xcode_project_version() {
     local xcode_dir="../MA-Mac-Menubar-xCode"
     local target_name="Music Assistant Menubar"
@@ -128,11 +131,6 @@ sync_xcode_project_version() {
 
     if [ ! -f "$pbxproj" ]; then
         echo "Warnung: Xcode-Projekt nicht gefunden unter '$pbxproj' – Versions-Sync übersprungen." >&2
-        return
-    fi
-
-    if [ -n "$(git -C "$xcode_dir" status --porcelain 2>/dev/null)" ]; then
-        echo "Warnung: '$xcode_dir' hat bereits uncommitted Änderungen – Versions-Sync übersprungen, um sie nicht zu vermischen." >&2
         return
     fi
 
@@ -170,8 +168,24 @@ sync_xcode_project_version() {
         { print }
     ' "$pbxproj" > "$pbxproj.tmp" && mv "$pbxproj.tmp" "$pbxproj"
 
-    echo "Xcode-Projekt-Version aktualisiert: $pbxproj (MARKETING_VERSION=$NEW_VERSION, CURRENT_PROJECT_VERSION +1)."
-    echo "Bitte in Xcode/git prüfen und dort selbst committen."
+    # Gezielt nur die pbxproj-Datei stagen (kein `add -A`), damit andere,
+    # unabhängige uncommitted Änderungen in diesem Repo unberührt bleiben —
+    # nur der Versions-Bump wird committet.
+    git -C "$xcode_dir" add "$pbxproj"
+    if git -C "$xcode_dir" diff --cached --quiet -- "$pbxproj"; then
+        echo "Xcode-Projekt-Version bereits aktuell ($NEW_VERSION) – kein Commit nötig."
+        return
+    fi
+    if ! git -C "$xcode_dir" commit --quiet -m "chore: Version auf $NEW_VERSION setzen"; then
+        echo "Warnung: Commit im Xcode-Projekt fehlgeschlagen – bitte manuell prüfen: $xcode_dir" >&2
+        return
+    fi
+    if ! git -C "$xcode_dir" push origin main --quiet; then
+        echo "Warnung: Push des Xcode-Projekt-Commits fehlgeschlagen – bitte manuell pushen: $xcode_dir" >&2
+        return
+    fi
+
+    echo "Xcode-Projekt-Version aktualisiert, committet und gepusht: $pbxproj (MARKETING_VERSION=$NEW_VERSION, CURRENT_PROJECT_VERSION +1)."
 }
 
 sync_xcode_project_version
