@@ -119,12 +119,21 @@ struct SearchView: View {
             }
             .navigationDestination(for: SearchDestination.self) { destination in
                 switch destination {
-                case .artist(let itemId, let provider, let name):
-                    ArtistDetailView(itemId: itemId, provider: provider, name: name)
+                case .artist(let itemId, let provider, let name, let uri):
+                    ArtistDetailView(itemId: itemId, provider: provider, name: name, uri: uri)
                 case .album(let itemId, let provider, let name):
                     MediaDetailView(title: name) {
                         try await appState.loadAlbumTracks(itemId: itemId, provider: provider)
                     }
+                // SearchDestination ist ein public enum aus MAMenubarLib —
+                // über die Modulgrenze hinweg gilt ein switch darüber laut
+                // Swift 6 nie als beweisbar erschöpfend, auch mit allen
+                // Fällen abgedeckt (siehe SE-0192). @unknown default statt
+                // eines regulären default, damit ein künftig ergänzter Fall
+                // hier weiterhin als Warnung auffällt statt lautlos hierher
+                // durchzufallen.
+                @unknown default:
+                    EmptyView()
                 }
             }
         }

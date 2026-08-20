@@ -18,6 +18,7 @@ public struct Track: Codable, Identifiable, Equatable, Sendable {
         let name: String
         let itemId: String?
         let provider: String?
+        let uri: String?
     }
 
     public let itemId: String
@@ -51,7 +52,7 @@ public struct Track: Codable, Identifiable, Equatable, Sendable {
     /// Album mitliefert oder es die schlanken Pflichtfelder ausnahmsweise nicht hat.
     public var albumRef: MediaItemRef? {
         guard let album, let itemId = album.itemId, let provider = album.provider else { return nil }
-        return MediaItemRef(itemId: itemId, provider: provider, name: album.name)
+        return MediaItemRef(itemId: itemId, provider: provider, name: album.name, uri: album.uri)
     }
 
     /// Navigierbare Referenz auf den ersten Interpreten dieses Tracks (siehe
@@ -61,7 +62,7 @@ public struct Track: Codable, Identifiable, Equatable, Sendable {
         guard let first = artists?.first, let itemId = first.itemId, let provider = first.provider else {
             return nil
         }
-        return MediaItemRef(itemId: itemId, provider: provider, name: first.name)
+        return MediaItemRef(itemId: itemId, provider: provider, name: first.name, uri: first.uri)
     }
 
     // Custom init nur wegen `duration` (siehe FlexibleDecoding.swift — der

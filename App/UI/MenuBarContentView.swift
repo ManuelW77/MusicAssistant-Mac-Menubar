@@ -213,7 +213,9 @@ struct MenuBarContentView: View {
             guard let track = try? await appState.loadCurrentTrackDetail(), let artistRef = track.primaryArtistRef else {
                 return
             }
-            appState.pendingSearchDestination = .artist(itemId: artistRef.itemId, provider: artistRef.provider, name: artistRef.name)
+            appState.pendingSearchDestination = .artist(
+                itemId: artistRef.itemId, provider: artistRef.provider, name: artistRef.name, uri: artistRef.uri
+            )
             openWindow(id: "search")
         }
     }

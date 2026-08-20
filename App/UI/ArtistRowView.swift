@@ -9,7 +9,9 @@ struct ArtistRowView: View {
     var body: some View {
         HStack(spacing: 10) {
             NavigationLink(
-                value: SearchDestination.artist(itemId: artist.itemId, provider: artist.provider, name: artist.name)
+                value: SearchDestination.artist(
+                    itemId: artist.itemId, provider: artist.provider, name: artist.name, uri: artist.uri
+                )
             ) {
                 HStack(spacing: 10) {
                     MediaThumbnailView(imageProxyId: artist.imageProxyId)

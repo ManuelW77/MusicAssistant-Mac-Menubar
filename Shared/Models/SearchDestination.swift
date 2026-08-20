@@ -5,6 +5,7 @@ import Foundation
 /// den Wunsch fensterübergreifend, SearchView pusht ihn dann auf seinen
 /// eigenen NavigationPath (siehe SearchView.swift).
 public enum SearchDestination: Hashable, Sendable {
-    case artist(itemId: String, provider: String, name: String)
+    /// uri: für den Play-Button in ArtistDetailView (appState.play(uri:)).
+    case artist(itemId: String, provider: String, name: String, uri: String?)
     case album(itemId: String, provider: String, name: String)
 }

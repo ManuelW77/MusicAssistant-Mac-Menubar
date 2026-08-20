@@ -54,6 +54,21 @@ struct SearchTests {
         #expect(track.primaryArtistRef == MediaItemRef(itemId: "5", provider: "builtin", name: "Ein Interpret"))
     }
 
+    @Test("Track.primaryArtistRef.uri wird für den Play-Button in ArtistDetailView mitgegeben")
+    func decodesTrackNavigationRefUri() throws {
+        let json = """
+        {
+            "item_id": "1", "provider": "builtin", "name": "Ein Titel",
+            "uri": "library://track/1",
+            "artists": [{"name": "Ein Interpret", "item_id": "5", "provider": "builtin", "uri": "library://artist/5"}]
+        }
+        """
+        let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+        let track = try value.decode(Track.self)
+
+        #expect(track.primaryArtistRef?.uri == "library://artist/5")
+    }
+
     @Test("Track.albumRef/primaryArtistRef sind nil ohne verschachtelte item_id/provider")
     func decodesTrackNavigationRefsMissing() throws {
         let json = """
