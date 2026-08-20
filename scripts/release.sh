@@ -127,7 +127,8 @@ echo "  https://github.com/ManuelW77/MusicAssistant-Mac-Menubar/actions"
 sync_xcode_project_version() {
     local xcode_dir="../MA-Mac-Menubar-xCode"
     local target_name="Music Assistant Menubar"
-    local pbxproj="$xcode_dir/$target_name.xcodeproj/project.pbxproj"
+    local pbxproj_rel="$target_name.xcodeproj/project.pbxproj"
+    local pbxproj="$xcode_dir/$pbxproj_rel"
 
     if [ ! -f "$pbxproj" ]; then
         echo "Warnung: Xcode-Projekt nicht gefunden unter '$pbxproj' – Versions-Sync übersprungen." >&2
@@ -170,9 +171,16 @@ sync_xcode_project_version() {
 
     # Gezielt nur die pbxproj-Datei stagen (kein `add -A`), damit andere,
     # unabhängige uncommitted Änderungen in diesem Repo unberührt bleiben —
-    # nur der Versions-Bump wird committet.
-    git -C "$xcode_dir" add "$pbxproj"
-    if git -C "$xcode_dir" diff --cached --quiet -- "$pbxproj"; then
+    # nur der Versions-Bump wird committet. Pfad relativ zu $xcode_dir
+    # übergeben, nicht mit dem vollen "$xcode_dir/..."-Präfix: `git -C`
+    # wechselt bereits dorthin, und ein Pathspec wie
+    # "../MA-Mac-Menubar-xCode/Music Assistant Menubar.xcodeproj/..." lehnt
+    # Git als "outside repository" ab, obwohl er lexikalisch wieder ins Repo
+    # zurückführt — Git prüft Pathspecs lexikalisch/prefixbasiert, nicht per
+    # vollem realpath, und verweigert jedes ".."-Segment, das den Prefix
+    # verlässt, auch wenn ein späteres Segment mit gleichem Namen zurückführt.
+    git -C "$xcode_dir" add "$pbxproj_rel"
+    if git -C "$xcode_dir" diff --cached --quiet -- "$pbxproj_rel"; then
         echo "Xcode-Projekt-Version bereits aktuell ($NEW_VERSION) – kein Commit nötig."
         return
     fi
