@@ -730,6 +730,34 @@ public final class AppState {
         }
         return newState
     }
+
+    /// Lädt den aktuellen Zufallswiedergabe-Status der Queue des gewählten
+    /// Players. Anders als Crossfade gibt es hier keine Server-Versions-
+    /// abhängige Legacy-Config, `shuffle_enabled` liegt schon immer direkt auf
+    /// der Queue.
+    public func loadShuffleEnabled() async throws -> Bool {
+        guard let client else { throw QueueError.noClient }
+        guard let playerId = selectedPlayerID else { throw QueueError.noPlayer }
+        let queue: PlayerQueueInfo = try await client.send(
+            "player_queues/get",
+            args: QueueIDArgs(queueId: playerId)
+        )
+        return queue.shuffleEnabled ?? false
+    }
+
+    /// Togglet die Zufallswiedergabe für die Queue des gewählten Players und
+    /// gibt den neuen Status zurück.
+    public func toggleShuffle() async throws -> Bool {
+        guard let client else { throw QueueError.noClient }
+        guard let playerId = selectedPlayerID else { throw QueueError.noPlayer }
+        let currentlyEnabled = try await loadShuffleEnabled()
+        let newState = !currentlyEnabled
+        try await client.sendRaw(
+            "player_queues/shuffle",
+            args: QueueShuffleArgs(queueId: playerId, shuffleEnabled: newState)
+        )
+        return newState
+    }
 }
 
 public extension AppState {

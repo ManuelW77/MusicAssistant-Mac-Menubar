@@ -31,6 +31,10 @@ public enum L10n {
         case smartCrossfadeEnable
         case smartCrossfadeDisable
 
+        // ShuffleButtonView
+        case shuffleEnable
+        case shuffleDisable
+
         // FavoriteButtonView
         case favorite
         case addToFavorites

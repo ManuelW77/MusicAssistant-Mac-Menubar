@@ -146,6 +146,8 @@ struct MenuBarContentView: View {
 
                 CrossfadeButtonView()
 
+                ShuffleButtonView()
+
                 Button {
                     showAddToPlaylist = true
                 } label: {

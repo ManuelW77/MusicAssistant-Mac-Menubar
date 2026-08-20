@@ -173,3 +173,14 @@ public struct QueueCrossfadeArgs: Encodable, Sendable {
         self.crossfadeEnabled = crossfadeEnabled
     }
 }
+
+/// Für `player_queues/shuffle` — der Bool-Toggle-Befehl für Zufallswiedergabe
+/// auf der Queue (queue_id == player_id), analog zu `QueueCrossfadeArgs`.
+public struct QueueShuffleArgs: Encodable, Sendable {
+    public let queueId: String
+    public let shuffleEnabled: Bool
+    public init(queueId: String, shuffleEnabled: Bool) {
+        self.queueId = queueId
+        self.shuffleEnabled = shuffleEnabled
+    }
+}

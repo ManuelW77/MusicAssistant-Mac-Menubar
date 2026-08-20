@@ -19,6 +19,9 @@ extension L10n {
         .smartCrossfadeEnable: (de: "Smart Crossfade einschalten", en: "Turn on Smart Crossfade"),
         .smartCrossfadeDisable: (de: "Smart Crossfade ausschalten", en: "Turn off Smart Crossfade"),
 
+        .shuffleEnable: (de: "Zufallswiedergabe einschalten", en: "Turn on Shuffle"),
+        .shuffleDisable: (de: "Zufallswiedergabe ausschalten", en: "Turn off Shuffle"),
+
         .favorite: (de: "Favorit", en: "Favorite"),
         .addToFavorites: (de: "Zu Favoriten hinzufügen", en: "Add to Favorites"),
         .removeFromFavorites: (de: "Aus Favoriten entfernen", en: "Remove from Favorites"),
