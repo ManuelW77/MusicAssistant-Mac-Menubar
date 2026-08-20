@@ -7,12 +7,17 @@ import Foundation
 /// der Wahrheit für den Crossfade-Status (siehe AppState.loadCrossfadeEnabled(),
 /// AppState.usesQueueCrossfadeAPI). Auf älteren Servern bleibt der Wert nil
 /// und AppState liest stattdessen die Player-Config (`smart_fades_mode`).
+/// `shuffleEnabled` bildet das Server-Feld `shuffle_enabled` ab — dieses gibt
+/// es schon deutlich länger als die Queue-Crossfade-API, daher ohne
+/// Legacy-Fallback (siehe AppState.loadShuffleEnabled()/toggleShuffle()).
 public struct PlayerQueueInfo: Codable, Equatable, Sendable {
     public let queueId: String
     public let crossfadeEnabled: Bool?
+    public let shuffleEnabled: Bool?
 
-    public init(queueId: String, crossfadeEnabled: Bool? = nil) {
+    public init(queueId: String, crossfadeEnabled: Bool? = nil, shuffleEnabled: Bool? = nil) {
         self.queueId = queueId
         self.crossfadeEnabled = crossfadeEnabled
+        self.shuffleEnabled = shuffleEnabled
     }
 }

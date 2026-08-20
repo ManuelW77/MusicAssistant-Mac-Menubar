@@ -133,10 +133,14 @@ struct MenuBarContentView: View {
                 Text(appState.selectedPlayer?.currentMedia?.title ?? appState.t(.noPlayback))
                     .font(.headline)
                     .lineLimit(1)
+                    .contentShape(Rectangle())
+                    .onTapGesture { openCurrentTrackAlbum() }
                 Text(appState.selectedPlayer?.currentMedia?.artist ?? " ")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                    .contentShape(Rectangle())
+                    .onTapGesture { openCurrentTrackArtist() }
             }
 
             HStack(spacing: 8) {
@@ -145,6 +149,8 @@ struct MenuBarContentView: View {
                 RadioButtonView()
 
                 CrossfadeButtonView()
+
+                ShuffleButtonView()
 
                 Button {
                     showAddToPlaylist = true
@@ -184,6 +190,37 @@ struct MenuBarContentView: View {
         }
         .padding(16)
         .frame(width: Self.contentWidth)
+    }
+
+    /// Klick auf den Titel des laufenden Songs: löst dessen Album auf
+    /// (music/item_by_uri, da PlayerMedia.album nur ein Anzeigename ist,
+    /// keine navigierbare Referenz) und öffnet das Suchfenster direkt dort.
+    private func openCurrentTrackAlbum() {
+        Task {
+            guard let track = try? await appState.loadCurrentTrackDetail(), let albumRef = track.albumRef else {
+                return
+            }
+            appState.pendingSearchDestination = .album(
+                itemId: albumRef.itemId, provider: albumRef.provider, name: albumRef.name,
+                artistName: track.artistNames.isEmpty ? nil : track.artistNames
+            )
+            openWindow(id: "search")
+        }
+    }
+
+    /// Klick auf den Interpreten des laufenden Songs: analog zu
+    /// openCurrentTrackAlbum(), navigiert aber zur Artist-Übersicht
+    /// (Top-Titel/Titel/Alben).
+    private func openCurrentTrackArtist() {
+        Task {
+            guard let track = try? await appState.loadCurrentTrackDetail(), let artistRef = track.primaryArtistRef else {
+                return
+            }
+            appState.pendingSearchDestination = .artist(
+                itemId: artistRef.itemId, provider: artistRef.provider, name: artistRef.name, uri: artistRef.uri
+            )
+            openWindow(id: "search")
+        }
     }
 }
 

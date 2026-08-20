@@ -19,6 +19,9 @@ extension L10n {
         .smartCrossfadeEnable: (de: "Smart Crossfade einschalten", en: "Turn on Smart Crossfade"),
         .smartCrossfadeDisable: (de: "Smart Crossfade ausschalten", en: "Turn off Smart Crossfade"),
 
+        .shuffleEnable: (de: "Zufallswiedergabe einschalten", en: "Turn on Shuffle"),
+        .shuffleDisable: (de: "Zufallswiedergabe ausschalten", en: "Turn off Shuffle"),
+
         .favorite: (de: "Favorit", en: "Favorite"),
         .addToFavorites: (de: "Zu Favoriten hinzufügen", en: "Add to Favorites"),
         .removeFromFavorites: (de: "Aus Favoriten entfernen", en: "Remove from Favorites"),
@@ -47,6 +50,8 @@ extension L10n {
         .mediaTypeTrack: (de: "Titel", en: "Tracks"),
         .mediaTypeAlbum: (de: "Alben", en: "Albums"),
         .mediaTypeArtist: (de: "Interpreten", en: "Artists"),
+
+        .topTracks: (de: "Top-Titel", en: "Top Tracks"),
         .noCategorySelected: (de: "Keine Kategorie ausgewählt", en: "No category selected"),
         .selectAtLeastOneCategory: (de: "Wähle mindestens eine Kategorie oben aus.", en: "Select at least one category above."),
         .searchFailed: (de: "Suche fehlgeschlagen", en: "Search failed"),

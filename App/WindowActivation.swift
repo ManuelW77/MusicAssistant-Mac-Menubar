@@ -14,6 +14,17 @@ enum WindowActivation {
         openCount += 1
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+        // Ohne .moveToActiveSpace ordnet macOS ein neu erschienenes Fenster
+        // standardmäßig auf dem Space ein, auf dem die App zuletzt aktiv war
+        // (i.d.R. der erste Desktop, wo die LSUIElement-App beim Login
+        // startet) statt auf dem gerade aktiven Space des Nutzers. Das Flag
+        // wirkt erst beim nächsten orderFront/makeKeyAndOrderFront, muss also
+        // hier (vor jedem Erscheinen) statt einmalig bei Fenstererzeugung
+        // gesetzt werden — SwiftUIs `Window`-Szene gibt keinen direkten
+        // NSWindow-Zugriff zur Erzeugungszeit her.
+        for window in NSApp.windows {
+            window.collectionBehavior.insert(.moveToActiveSpace)
+        }
     }
 
     static func windowDidDisappear() {

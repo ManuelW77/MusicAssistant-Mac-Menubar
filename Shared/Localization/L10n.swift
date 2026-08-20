@@ -31,6 +31,10 @@ public enum L10n {
         case smartCrossfadeEnable
         case smartCrossfadeDisable
 
+        // ShuffleButtonView
+        case shuffleEnable
+        case shuffleDisable
+
         // FavoriteButtonView
         case favorite
         case addToFavorites
@@ -67,6 +71,9 @@ public enum L10n {
         case mediaTypeTrack
         case mediaTypeAlbum
         case mediaTypeArtist
+
+        // ArtistDetailView
+        case topTracks
         case noCategorySelected
         case selectAtLeastOneCategory
         case searchFailed
