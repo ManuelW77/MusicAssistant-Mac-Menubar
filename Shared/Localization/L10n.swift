@@ -71,6 +71,9 @@ public enum L10n {
         case mediaTypeTrack
         case mediaTypeAlbum
         case mediaTypeArtist
+
+        // ArtistDetailView
+        case topTracks
         case noCategorySelected
         case selectAtLeastOneCategory
         case searchFailed

@@ -10,6 +10,13 @@ struct SearchView: View {
     @State private var searchTask: Task<Void, Never>?
     @State private var selectedTypes: Set<MediaTypeFilter> = Set(MediaTypeFilter.allCases)
     @State private var selectedProviderDomain: String?
+    @State private var selectedTab: Tab = .search
+    @State private var searchPath = NavigationPath()
+
+    private enum Tab: Hashable {
+        case search
+        case playlists
+    }
 
     private enum LoadState: Equatable {
         case idle
@@ -40,20 +47,33 @@ struct SearchView: View {
     }
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             searchTab
                 .tabItem { Label(appState.t(.search), systemImage: "magnifyingglass") }
+                .tag(Tab.search)
 
             playlistsTab
                 .tabItem { Label("Playlists", systemImage: "music.note.list") }
+                .tag(Tab.playlists)
         }
         .frame(minWidth: 480, minHeight: 480)
         .onAppear { WindowActivation.windowDidAppear() }
         .onDisappear { WindowActivation.windowDidDisappear() }
+        // Vom Popover gesetztes Navigationsziel abholen (Artist-/Titel-Klick
+        // auf den laufenden Song, siehe AppState.pendingSearchDestination) —
+        // `.task(id:)` feuert sowohl beim frischen Öffnen des Fensters (Wert
+        // steht schon vor dem ersten Erscheinen fest) als auch bei bereits
+        // offenem Fenster (erneuter Klick ändert die id).
+        .task(id: appState.pendingSearchDestination) {
+            guard let destination = appState.pendingSearchDestination else { return }
+            selectedTab = .search
+            searchPath.append(destination)
+            appState.pendingSearchDestination = nil
+        }
     }
 
     private var searchTab: some View {
-        NavigationStack {
+        NavigationStack(path: $searchPath) {
             VStack(spacing: 0) {
                 filterRow
 
@@ -96,6 +116,16 @@ struct SearchView: View {
             }
             .task {
                 try? await appState.loadMusicProviders()
+            }
+            .navigationDestination(for: SearchDestination.self) { destination in
+                switch destination {
+                case .artist(let itemId, let provider, let name):
+                    ArtistDetailView(itemId: itemId, provider: provider, name: name)
+                case .album(let itemId, let provider, let name):
+                    MediaDetailView(title: name) {
+                        try await appState.loadAlbumTracks(itemId: itemId, provider: provider)
+                    }
+                }
             }
         }
     }

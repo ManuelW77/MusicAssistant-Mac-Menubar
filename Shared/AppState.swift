@@ -80,6 +80,12 @@ public final class AppState {
     /// rein an den Daten.
     public private(set) var displayedPlaybackProgress: Double?
 
+    /// Fensterübergreifendes Navigationsziel fürs Suchfenster: vom Popover
+    /// (Artist-/Titel-Klick auf den laufenden Titel) gesetzt, von SearchView
+    /// per `.task(id:)` abgeholt und auf den eigenen NavigationPath gepusht,
+    /// danach selbst wieder auf nil gesetzt (siehe SearchDestination).
+    public var pendingSearchDestination: SearchDestination?
+
     public let settings: AppSettingsStore
     private var client: MassWebSocketClient?
     private var supervisorTask: Task<Void, Never>?
@@ -613,13 +619,64 @@ public final class AppState {
         )
     }
 
-    /// Lädt die Titel des übergebenen Albums (Drill-down im Suche-Fenster).
-    public func loadAlbumTracks(_ album: Album) async throws -> [Track] {
+    /// Lädt die Titel des Albums mit der übergebenen itemId/provider
+    /// (Drill-down im Suche-Fenster). Nimmt bewusst itemId/provider statt
+    /// eines vollen `Album` entgegen, damit auch die schlanke `MediaItemRef`
+    /// aus `Track.albumRef` (Popover-Klick auf den laufenden Titel) ohne
+    /// Zwischenschritt navigieren kann.
+    public func loadAlbumTracks(itemId: String, provider: String) async throws -> [Track] {
         guard let client else { throw SearchError.noClient }
         return try await client.send(
             "music/albums/album_tracks",
-            args: SimilarTracksArgs(itemId: album.itemId, providerInstanceIdOrDomain: album.provider)
+            args: SimilarTracksArgs(itemId: itemId, providerInstanceIdOrDomain: provider)
         )
+    }
+
+    /// Lädt die Titel des übergebenen Albums (Drill-down im Suche-Fenster).
+    public func loadAlbumTracks(_ album: Album) async throws -> [Track] {
+        try await loadAlbumTracks(itemId: album.itemId, provider: album.provider)
+    }
+
+    /// Lädt die Top-Titel eines Interpreten (`music/artists/top_tracks`,
+    /// verifiziert gegen music-assistant/server:
+    /// controllers/music/media/artists.py, ArtistsController.__init__).
+    public func loadArtistTopTracks(itemId: String, provider: String) async throws -> [Track] {
+        guard let client else { throw SearchError.noClient }
+        return try await client.send(
+            "music/artists/top_tracks",
+            args: SimilarTracksArgs(itemId: itemId, providerInstanceIdOrDomain: provider)
+        )
+    }
+
+    /// Lädt alle (Bibliotheks-/Provider-)Titel eines Interpreten
+    /// (`music/artists/artist_tracks`, siehe loadArtistTopTracks).
+    public func loadArtistTracks(itemId: String, provider: String) async throws -> [Track] {
+        guard let client else { throw SearchError.noClient }
+        return try await client.send(
+            "music/artists/artist_tracks",
+            args: SimilarTracksArgs(itemId: itemId, providerInstanceIdOrDomain: provider)
+        )
+    }
+
+    /// Lädt die Alben eines Interpreten (`music/artists/artist_albums`,
+    /// siehe loadArtistTopTracks).
+    public func loadArtistAlbums(itemId: String, provider: String) async throws -> [Album] {
+        guard let client else { throw SearchError.noClient }
+        return try await client.send(
+            "music/artists/artist_albums",
+            args: SimilarTracksArgs(itemId: itemId, providerInstanceIdOrDomain: provider)
+        )
+    }
+
+    /// Löst den aktuell laufenden Titel des gewählten Players zu seinem
+    /// vollen Track-Objekt auf (inkl. `albumRef`/`primaryArtistRef`) — für
+    /// die Popover-Klicks auf Titel/Interpret, die ins Suchfenster
+    /// navigieren sollen. Wiederverwendet FavoriteError, da identische
+    /// Fehlerfälle wie loadFavoriteStatus().
+    public func loadCurrentTrackDetail() async throws -> Track {
+        guard let client else { throw FavoriteError.noClient }
+        guard let uri = selectedPlayer?.currentMedia?.uri else { throw FavoriteError.noCurrentTrack }
+        return try await client.send("music/item_by_uri", args: ItemByURIArgs(uri: uri))
     }
 
     /// Lädt das Marken-Icon eines Providers (Data-URI, direkt vom Server

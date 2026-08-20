@@ -7,20 +7,24 @@ struct ArtistRowView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        Button {
-            play()
-        } label: {
-            HStack(spacing: 10) {
-                MediaThumbnailView(imageProxyId: artist.imageProxyId)
-                Text(artist.name)
-                    .lineLimit(1)
-                Spacer()
-                Image(systemName: "play.circle")
-                    .foregroundStyle(.secondary)
+        HStack(spacing: 10) {
+            NavigationLink(
+                value: SearchDestination.artist(itemId: artist.itemId, provider: artist.provider, name: artist.name)
+            ) {
+                HStack(spacing: 10) {
+                    MediaThumbnailView(imageProxyId: artist.imageProxyId)
+                    Text(artist.name)
+                        .lineLimit(1)
+                }
             }
-            .contentShape(Rectangle())
+            Spacer()
+            Button {
+                play()
+            } label: {
+                Image(systemName: "play.circle")
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
         .contextMenu {
             Button(appState.t(.play)) { play() }
             Button(appState.t(.addToQueue)) { enqueue() }

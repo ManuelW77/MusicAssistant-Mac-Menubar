@@ -50,6 +50,8 @@ extension L10n {
         .mediaTypeTrack: (de: "Titel", en: "Tracks"),
         .mediaTypeAlbum: (de: "Alben", en: "Albums"),
         .mediaTypeArtist: (de: "Interpreten", en: "Artists"),
+
+        .topTracks: (de: "Top-Titel", en: "Top Tracks"),
         .noCategorySelected: (de: "Keine Kategorie ausgewählt", en: "No category selected"),
         .selectAtLeastOneCategory: (de: "Wähle mindestens eine Kategorie oben aus.", en: "Select at least one category above."),
         .searchFailed: (de: "Suche fehlgeschlagen", en: "Search failed"),

@@ -37,6 +37,40 @@ struct SearchTests {
         #expect(track.imageProxyId == "abc")
     }
 
+    @Test("decodiert Track.albumRef/primaryArtistRef aus verschachtelten item_id/provider")
+    func decodesTrackNavigationRefs() throws {
+        let json = """
+        {
+            "item_id": "1", "provider": "builtin", "name": "Ein Titel",
+            "uri": "library://track/1", "duration": 180,
+            "artists": [{"name": "Ein Interpret", "item_id": "5", "provider": "builtin"}],
+            "album": {"name": "Ein Album", "item_id": "6", "provider": "builtin"}
+        }
+        """
+        let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+        let track = try value.decode(Track.self)
+
+        #expect(track.albumRef == MediaItemRef(itemId: "6", provider: "builtin", name: "Ein Album"))
+        #expect(track.primaryArtistRef == MediaItemRef(itemId: "5", provider: "builtin", name: "Ein Interpret"))
+    }
+
+    @Test("Track.albumRef/primaryArtistRef sind nil ohne verschachtelte item_id/provider")
+    func decodesTrackNavigationRefsMissing() throws {
+        let json = """
+        {
+            "item_id": "2", "provider": "spotify", "name": "Anderer Titel",
+            "uri": "spotify://track/2",
+            "artists": [{"name": "Ein Interpret"}],
+            "album": {"name": "Ein Album"}
+        }
+        """
+        let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+        let track = try value.decode(Track.self)
+
+        #expect(track.albumRef == nil)
+        #expect(track.primaryArtistRef == nil)
+    }
+
     @Test("decodiert Track als schlankes ItemMapping mit direktem image-Feld")
     func decodesTrackAsItemMapping() throws {
         let json = """

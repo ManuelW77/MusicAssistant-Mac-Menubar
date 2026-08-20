@@ -79,9 +79,11 @@ public struct PlayMediaArgs: Encodable, Sendable {
 }
 
 /// Ursprünglich nur für music/tracks/similar_tracks angelegt, mittlerweile auch
-/// für music/playlists/playlist_tracks und music/albums/album_tracks
-/// wiederverwendet — alle drei Commands teilen sich exakt dieselben zwei
-/// Pflichtparameter (item_id/provider_instance_id_or_domain).
+/// für music/playlists/playlist_tracks, music/albums/album_tracks und die
+/// Artist-Drill-down-Commands (music/artists/artist_tracks, top_tracks,
+/// artist_albums) wiederverwendet — alle teilen sich exakt dieselben zwei
+/// Pflichtparameter (item_id/provider_instance_id_or_domain), verifiziert
+/// gegen music-assistant/server: controllers/music/media/artists.py.
 public struct SimilarTracksArgs: Encodable, Sendable {
     public let itemId: String
     public let providerInstanceIdOrDomain: String

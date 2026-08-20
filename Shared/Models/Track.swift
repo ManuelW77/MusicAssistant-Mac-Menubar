@@ -9,8 +9,15 @@ import Foundation
 // MediaThumbnail.swift) werden unterstützt.
 
 public struct Track: Codable, Identifiable, Equatable, Sendable {
+    // itemId/provider sind wie beim vollen Track ItemMapping-Pflichtfelder
+    // (siehe _MediaItemBase in music-assistant/models) und daher bei
+    // Suchergebnissen immer vorhanden — trotzdem optional decodiert, um bei
+    // unerwartet schlanken Provider-Antworten nicht das gesamte Track-Decoding
+    // scheitern zu lassen (siehe Datei-Kommentar oben).
     struct NameRef: Codable, Equatable, Sendable {
         let name: String
+        let itemId: String?
+        let provider: String?
     }
 
     public let itemId: String
@@ -36,6 +43,25 @@ public struct Track: Codable, Identifiable, Equatable, Sendable {
 
     public var imageProxyId: String? {
         image?.proxyId ?? metadata?.proxyId
+    }
+
+    /// Navigierbare Referenz auf das Album dieses Tracks (Drill-down aus dem
+    /// aktuell laufenden Titel im Menüleisten-Popover, siehe
+    /// MenuBarContentView/SearchDestination). `nil`, wenn der Server kein
+    /// Album mitliefert oder es die schlanken Pflichtfelder ausnahmsweise nicht hat.
+    public var albumRef: MediaItemRef? {
+        guard let album, let itemId = album.itemId, let provider = album.provider else { return nil }
+        return MediaItemRef(itemId: itemId, provider: provider, name: album.name)
+    }
+
+    /// Navigierbare Referenz auf den ersten Interpreten dieses Tracks (siehe
+    /// albumRef). Bei mehreren Interpreten bewusst nur der erste — das
+    /// Popover zeigt ohnehin nur einen zusammengesetzten Namen an.
+    public var primaryArtistRef: MediaItemRef? {
+        guard let first = artists?.first, let itemId = first.itemId, let provider = first.provider else {
+            return nil
+        }
+        return MediaItemRef(itemId: itemId, provider: provider, name: first.name)
     }
 
     // Custom init nur wegen `duration` (siehe FlexibleDecoding.swift — der
