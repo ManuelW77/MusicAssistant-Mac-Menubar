@@ -121,8 +121,8 @@ struct SearchView: View {
                 switch destination {
                 case .artist(let itemId, let provider, let name, let uri):
                     ArtistDetailView(itemId: itemId, provider: provider, name: name, uri: uri)
-                case .album(let itemId, let provider, let name):
-                    MediaDetailView(title: name) {
+                case .album(let itemId, let provider, let name, let artistName):
+                    MediaDetailView(title: name, subtitle: artistName) {
                         try await appState.loadAlbumTracks(itemId: itemId, provider: provider)
                     }
                 // SearchDestination ist ein public enum aus MAMenubarLib —

@@ -200,7 +200,10 @@ struct MenuBarContentView: View {
             guard let track = try? await appState.loadCurrentTrackDetail(), let albumRef = track.albumRef else {
                 return
             }
-            appState.pendingSearchDestination = .album(itemId: albumRef.itemId, provider: albumRef.provider, name: albumRef.name)
+            appState.pendingSearchDestination = .album(
+                itemId: albumRef.itemId, provider: albumRef.provider, name: albumRef.name,
+                artistName: track.artistNames.isEmpty ? nil : track.artistNames
+            )
             openWindow(id: "search")
         }
     }

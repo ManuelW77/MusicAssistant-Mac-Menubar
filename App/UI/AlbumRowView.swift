@@ -9,7 +9,7 @@ struct AlbumRowView: View {
     var body: some View {
         HStack(spacing: 10) {
             NavigationLink {
-                MediaDetailView(title: album.name) {
+                MediaDetailView(title: album.name, subtitle: album.artistNames.isEmpty ? nil : album.artistNames) {
                     try await appState.loadAlbumTracks(album)
                 }
             } label: {
