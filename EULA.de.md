@@ -24,9 +24,9 @@ Die App wird "WIE BESEHEN" ("AS IS") ohne jegliche ausdrückliche oder stillschw
 
 Im gesetzlich zulässigen Höchstmaß haftet der Entwickler nicht für indirekte, zufällige, besondere, Folge- oder Strafschäden oder für Datenverlust, die aus der Nutzung oder der Unfähigkeit zur Nutzung der App entstehen — einschließlich Problemen, die von deinem eigenen Music-Assistant-Server, deinem Netzwerk oder deiner Infrastruktur ausgehen, welche außerhalb der Kontrolle des Entwicklers liegen.
 
-## 5. Open Source
+## 5. Quelloffen (nicht-kommerziell)
 
-Der Quellcode der App ist öffentlich verfügbar unter https://github.com/ManuelW77/MusicAssistant-Mac-Menubar unter der Apache License, Version 2.0 (siehe [LICENSE](LICENSE)). Diese Lizenz regelt die Weiterverbreitung und Bearbeitung des Quellcodes; diese Vereinbarung regelt deine Nutzung der über den App Store vertriebenen, kompilierten App.
+Der Quellcode der App ist öffentlich verfügbar unter https://github.com/ManuelW77/MusicAssistant-Mac-Menubar unter der PolyForm Noncommercial License 1.0.0 (siehe [LICENSE](LICENSE)). Diese Lizenz erlaubt private, persönliche und andere nicht-kommerzielle Nutzung, Bearbeitung und Weiterverbreitung des Quellcodes, gestattet jedoch keine kommerzielle Nutzung (einschließlich des Verkaufs der App oder einer bearbeiteten Version davon oder des Anbietens als Teil eines kostenpflichtigen Produkts oder Dienstes). Diese Lizenz regelt die Weiterverbreitung und Bearbeitung des Quellcodes; diese Vereinbarung regelt deine Nutzung der über den App Store vertriebenen, kompilierten App.
 
 ## 6. Beendigung
 
