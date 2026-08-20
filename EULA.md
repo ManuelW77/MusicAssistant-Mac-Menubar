@@ -24,9 +24,9 @@ The App is provided "AS IS," without warranty of any kind, express or implied, i
 
 To the maximum extent permitted by applicable law, in no event shall the Developer be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of data, arising out of or related to your use of, or inability to use, the App — including issues originating from your own Music Assistant server, network, or infrastructure, which is outside the Developer's control.
 
-## 5. Open source
+## 5. Source-available license
 
-The App's source code is publicly available at https://github.com/ManuelW77/MusicAssistant-Mac-Menubar under the Apache License, Version 2.0 (see [LICENSE](LICENSE)). That license governs redistribution and modification of the source code; this Agreement governs your use of the compiled App as distributed through the App Store.
+The App's source code is publicly available at https://github.com/ManuelW77/MusicAssistant-Mac-Menubar under the PolyForm Noncommercial License 1.0.0 (see [LICENSE](LICENSE)). That license permits personal, private, and other noncommercial use, modification, and redistribution of the source code, but does not permit any commercial use (including selling the App or a modified version of it, or offering it as part of a paid product or service). That license governs redistribution and modification of the source code; this Agreement governs your use of the compiled App as distributed through the App Store.
 
 ## 6. Termination
 

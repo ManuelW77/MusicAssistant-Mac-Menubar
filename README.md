@@ -1,5 +1,7 @@
 # MusicAssistant-Mac-Menubar
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X51V6SLP)
+
 🇩🇪 [Deutsch](README.de.md) · [Privacy Policy](PRIVACY.md) · [EULA](EULA.md)
 
 A native macOS menu bar client for [Music Assistant](https://www.music-assistant.io/) (MA). Control your currently playing player right from the menu bar — cover art, title/artist, transport controls, volume, favorites, radio, smart crossfade, playlists, and a full search — without opening the MA web UI or a companion app.

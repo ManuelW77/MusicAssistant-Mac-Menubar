@@ -1,5 +1,7 @@
 # MusicAssistant-Mac-Menubar
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X51V6SLP)
+
 🇬🇧 [English](README.md) · [Datenschutzerklärung](PRIVACY.de.md) · [EULA](EULA.de.md)
 
 Natives macOS-Menüleisten-Tool für [Music Assistant](https://www.music-assistant.io/) (MA). Steuere deinen aktuell laufenden Player direkt aus der Menüleiste — Cover, Titel/Künstler, Transport-Controls, Lautstärke, Favoriten, Radio, Smart Crossfade, Playlists und eine vollwertige Suche — ohne die MA-Web-UI oder eine Companion-App öffnen zu müssen.
