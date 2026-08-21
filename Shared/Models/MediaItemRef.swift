@@ -6,7 +6,7 @@ import Foundation
 /// `_MediaItemBase` in music-assistant/models) — reicht aus, um die Detail-
 /// bzw. Titel-Kommandos (z.B. `music/albums/album_tracks`) ohne einen
 /// separaten Nachlade-Schritt aufzurufen.
-public struct MediaItemRef: Equatable, Sendable {
+public struct MediaItemRef: Hashable, Sendable {
     public let itemId: String
     public let provider: String
     public let name: String
