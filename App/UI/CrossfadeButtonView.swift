@@ -18,9 +18,9 @@ struct CrossfadeButtonView: View {
                     : "arrow.left.arrow.right.circle"
             )
             .labelStyle(.iconOnly)
+            .foregroundStyle(crossfadeEnabled == true ? .green : .primary)
         }
         .buttonStyle(.glass)
-        .tint(crossfadeEnabled == true ? .green.opacity(0.35) : nil)
         .help(crossfadeEnabled == true ? appState.t(.smartCrossfadeDisable) : appState.t(.smartCrossfadeEnable))
         .disabled(appState.selectedPlayerID == nil || isWorking)
         .task(id: appState.selectedPlayerID) {

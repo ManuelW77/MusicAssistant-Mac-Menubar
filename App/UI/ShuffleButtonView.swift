@@ -16,9 +16,9 @@ struct ShuffleButtonView: View {
                 systemImage: shuffleEnabled == true ? "shuffle.circle.fill" : "shuffle.circle"
             )
             .labelStyle(.iconOnly)
+            .foregroundStyle(shuffleEnabled == true ? .green : .primary)
         }
         .buttonStyle(.glass)
-        .tint(shuffleEnabled == true ? .green.opacity(0.35) : nil)
         .help(shuffleEnabled == true ? appState.t(.shuffleDisable) : appState.t(.shuffleEnable))
         .disabled(appState.selectedPlayerID == nil || isWorking)
         .task(id: appState.selectedPlayerID) {
