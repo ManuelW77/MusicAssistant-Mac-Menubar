@@ -20,6 +20,7 @@ struct CrossfadeButtonView: View {
             .labelStyle(.iconOnly)
         }
         .buttonStyle(.glass)
+        .tint(crossfadeEnabled == true ? .green : nil)
         .help(crossfadeEnabled == true ? appState.t(.smartCrossfadeDisable) : appState.t(.smartCrossfadeEnable))
         .disabled(appState.selectedPlayerID == nil || isWorking)
         .task(id: appState.selectedPlayerID) {
