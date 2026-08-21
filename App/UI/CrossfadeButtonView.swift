@@ -18,6 +18,7 @@ struct CrossfadeButtonView: View {
                     : "arrow.left.arrow.right.circle"
             )
             .labelStyle(.iconOnly)
+            .font(.title3)
             .foregroundStyle(crossfadeEnabled == true ? .green : .primary)
         }
         .buttonStyle(.glass)

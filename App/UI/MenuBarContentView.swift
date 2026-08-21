@@ -166,7 +166,7 @@ struct MenuBarContentView: View {
                 .onTapGesture { openCurrentTrackArtist() }
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: 4) {
                 FavoriteButtonView()
 
                 RadioButtonView()
@@ -180,6 +180,7 @@ struct MenuBarContentView: View {
                 } label: {
                     Label(appState.t(.addToPlaylist), systemImage: "text.badge.plus")
                         .labelStyle(.iconOnly)
+                        .font(.title3)
                 }
                 .buttonStyle(.glass)
                 .help(appState.t(.addToPlaylist))
@@ -191,6 +192,7 @@ struct MenuBarContentView: View {
                 } label: {
                     Label(appState.t(.search), systemImage: "magnifyingglass")
                         .labelStyle(.iconOnly)
+                        .font(.title3)
                 }
                 .buttonStyle(.glass)
                 .help(appState.t(.search))

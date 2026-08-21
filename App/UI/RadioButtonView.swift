@@ -11,6 +11,7 @@ struct RadioButtonView: View {
         } label: {
             Label(appState.t(.startRadio), systemImage: "dot.radiowaves.left.and.right")
                 .labelStyle(.iconOnly)
+                .font(.title3)
         }
         .buttonStyle(.glass)
         .help(appState.t(.startRadio))

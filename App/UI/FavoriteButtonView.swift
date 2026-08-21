@@ -17,6 +17,7 @@ struct FavoriteButtonView: View {
         } label: {
             Label(appState.t(.favorite), systemImage: isFavorite == true ? "heart.fill" : "heart")
                 .labelStyle(.iconOnly)
+                .font(.title3)
         }
         .buttonStyle(.glass)
         .tint(isFavorite == true ? .red : nil)

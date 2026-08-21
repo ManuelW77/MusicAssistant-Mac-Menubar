@@ -16,6 +16,7 @@ struct ShuffleButtonView: View {
                 systemImage: shuffleEnabled == true ? "shuffle.circle.fill" : "shuffle.circle"
             )
             .labelStyle(.iconOnly)
+            .font(.title3)
             .foregroundStyle(shuffleEnabled == true ? .green : .primary)
         }
         .buttonStyle(.glass)
