@@ -9,8 +9,14 @@ import Foundation
 // MediaThumbnail.swift) werden unterstützt.
 
 public struct Album: Codable, Identifiable, Equatable, Sendable {
+    // itemId/provider/uri optional wie bei Track.NameRef (siehe dort) — der
+    // Artist-Eintrag kann bei schlanken ItemMapping-Antworten ausnahmsweise
+    // fehlen, ohne dass das gesamte Album-Decoding scheitern soll.
     struct NameRef: Codable, Equatable, Sendable {
         let name: String
+        let itemId: String?
+        let provider: String?
+        let uri: String?
     }
 
     public let itemId: String
@@ -30,6 +36,18 @@ public struct Album: Codable, Identifiable, Equatable, Sendable {
 
     public var imageProxyId: String? {
         image?.proxyId ?? metadata?.proxyId
+    }
+
+    /// Navigierbare Referenz auf den ersten Interpreten dieses Albums
+    /// (Drill-down aus AlbumDetailView zur Artist-Übersicht, siehe
+    /// Track.primaryArtistRef für dasselbe Muster). Bei mehreren Interpreten
+    /// bewusst nur der erste — die Kopfzeile zeigt ohnehin nur einen
+    /// zusammengesetzten Namen an.
+    public var primaryArtistRef: MediaItemRef? {
+        guard let first = artists?.first, let itemId = first.itemId, let provider = first.provider else {
+            return nil
+        }
+        return MediaItemRef(itemId: itemId, provider: provider, name: first.name, uri: first.uri)
     }
 
     // Custom init nur wegen `year` (siehe FlexibleDecoding.swift — manche

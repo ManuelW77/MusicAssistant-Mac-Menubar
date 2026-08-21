@@ -74,6 +74,9 @@ public enum L10n {
 
         // ArtistDetailView
         case topTracks
+
+        // AlbumDetailView
+        case albumEyebrow
         case noCategorySelected
         case selectAtLeastOneCategory
         case searchFailed

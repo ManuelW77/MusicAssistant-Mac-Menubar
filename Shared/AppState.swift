@@ -632,11 +632,6 @@ public final class AppState {
         )
     }
 
-    /// Lädt die Titel des übergebenen Albums (Drill-down im Suche-Fenster).
-    public func loadAlbumTracks(_ album: Album) async throws -> [Track] {
-        try await loadAlbumTracks(itemId: album.itemId, provider: album.provider)
-    }
-
     /// Lädt die Top-Titel eines Interpreten (`music/artists/top_tracks`,
     /// verifiziert gegen music-assistant/server:
     /// controllers/music/media/artists.py, ArtistsController.__init__).

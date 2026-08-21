@@ -24,6 +24,7 @@ struct TrackRowView: View {
                 }
                 Spacer()
                 Image(systemName: "play.circle")
+                    .font(.title3)
                     .foregroundStyle(.secondary)
             }
             .contentShape(Rectangle())

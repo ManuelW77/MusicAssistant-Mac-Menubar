@@ -8,11 +8,11 @@ struct AlbumRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            NavigationLink {
-                MediaDetailView(title: album.name, subtitle: album.artistNames.isEmpty ? nil : album.artistNames) {
-                    try await appState.loadAlbumTracks(album)
-                }
-            } label: {
+            NavigationLink(value: SearchDestination.album(
+                itemId: album.itemId, provider: album.provider, name: album.name, uri: album.uri,
+                artistName: album.artistNames.isEmpty ? nil : album.artistNames,
+                artistRef: album.primaryArtistRef
+            )) {
                 HStack(spacing: 10) {
                     MediaThumbnailView(imageProxyId: album.imageProxyId)
                     VStack(alignment: .leading, spacing: 2) {
@@ -32,6 +32,7 @@ struct AlbumRowView: View {
                 play()
             } label: {
                 Image(systemName: "play.circle")
+                    .font(.title3)
             }
             .buttonStyle(.plain)
         }

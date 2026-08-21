@@ -225,8 +225,9 @@ struct MenuBarContentView: View {
                 return
             }
             appState.pendingSearchDestination = .album(
-                itemId: albumRef.itemId, provider: albumRef.provider, name: albumRef.name,
-                artistName: track.artistNames.isEmpty ? nil : track.artistNames
+                itemId: albumRef.itemId, provider: albumRef.provider, name: albumRef.name, uri: albumRef.uri,
+                artistName: track.artistNames.isEmpty ? nil : track.artistNames,
+                artistRef: track.primaryArtistRef
             )
             popoverNavigationState.requestClose()
             openWindow(id: "search")

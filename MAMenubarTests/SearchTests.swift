@@ -121,6 +121,20 @@ struct SearchTests {
         #expect(album.imageProxyId == "abc")
     }
 
+    @Test("decodiert Album.primaryArtistRef aus verschachtelten item_id/provider")
+    func decodesAlbumNavigationRef() throws {
+        let json = """
+        {
+            "item_id": "10", "provider": "builtin", "name": "Ein Album",
+            "artists": [{"name": "Ein Interpret", "item_id": "5", "provider": "builtin", "uri": "library://artist/5"}]
+        }
+        """
+        let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+        let album = try value.decode(Album.self)
+
+        #expect(album.primaryArtistRef == MediaItemRef(itemId: "5", provider: "builtin", name: "Ein Interpret", uri: "library://artist/5"))
+    }
+
     @Test("decodiert Album als schlankes ItemMapping")
     func decodesAlbumAsItemMapping() throws {
         let json = """

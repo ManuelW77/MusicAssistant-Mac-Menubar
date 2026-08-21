@@ -56,7 +56,7 @@ struct SearchView: View {
                 .tabItem { Label("Playlists", systemImage: "music.note.list") }
                 .tag(Tab.playlists)
         }
-        .frame(minWidth: 480, minHeight: 480)
+        .frame(minWidth: 240, minHeight: 480)
         .onAppear { WindowActivation.windowDidAppear() }
         .onDisappear { WindowActivation.windowDidDisappear() }
         // Vom Popover gesetztes Navigationsziel abholen (Artist-/Titel-Klick
@@ -121,10 +121,11 @@ struct SearchView: View {
                 switch destination {
                 case .artist(let itemId, let provider, let name, let uri):
                     ArtistDetailView(itemId: itemId, provider: provider, name: name, uri: uri)
-                case .album(let itemId, let provider, let name, let artistName):
-                    MediaDetailView(title: name, subtitle: artistName) {
-                        try await appState.loadAlbumTracks(itemId: itemId, provider: provider)
-                    }
+                case .album(let itemId, let provider, let name, let uri, let artistName, let artistRef):
+                    AlbumDetailView(
+                        itemId: itemId, provider: provider, name: name, uri: uri,
+                        artistName: artistName, artistRef: artistRef
+                    )
                 // SearchDestination ist ein public enum aus MAMenubarLib —
                 // über die Modulgrenze hinweg gilt ein switch darüber laut
                 // Swift 6 nie als beweisbar erschöpfend, auch mit allen

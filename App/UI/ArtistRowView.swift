@@ -24,6 +24,7 @@ struct ArtistRowView: View {
                 play()
             } label: {
                 Image(systemName: "play.circle")
+                    .font(.title3)
             }
             .buttonStyle(.plain)
         }
