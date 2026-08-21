@@ -169,9 +169,9 @@ struct MenuBarContentView: View {
             HStack(spacing: 4) {
                 FavoriteButtonView()
 
-                RadioButtonView()
-
                 CrossfadeButtonView()
+
+                RadioButtonView()
 
                 ShuffleButtonView()
 
