@@ -105,6 +105,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupStatusItem() {
+        // Schließt das Popover, wenn aus MenuBarContentView heraus das
+        // Suchfenster geöffnet wird (Lupen-Button oder Klick auf Titel/
+        // Interpret) — sonst bliebe es hinter dem neuen Fenster offen stehen.
+        popoverNavigationState.onRequestClose = { [weak self] in
+            self?.closePopover()
+        }
+
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = item.button {
             button.image = Self.menuBarIcon

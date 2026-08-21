@@ -13,9 +13,17 @@ import MAMenubarLib
 @Observable
 final class PopoverNavigationState {
     private(set) var openCount = 0
+    /// Von AppDelegate gesetzt (schließt das Popover) — MenuBarContentView
+    /// ruft das vor jedem openWindow(id: "search") auf, damit das Suchfenster
+    /// nicht hinter dem noch offenen Popover aufgeht.
+    var onRequestClose: (() -> Void)?
 
     func notifyWillOpen() {
         openCount += 1
+    }
+
+    func requestClose() {
+        onRequestClose?()
     }
 }
 
@@ -130,17 +138,32 @@ struct MenuBarContentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             VStack(spacing: 2) {
-                Text(appState.selectedPlayer?.currentMedia?.title ?? appState.t(.noPlayback))
-                    .font(.headline)
-                    .lineLimit(1)
-                    .contentShape(Rectangle())
-                    .onTapGesture { openCurrentTrackAlbum() }
-                Text(appState.selectedPlayer?.currentMedia?.artist ?? " ")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .contentShape(Rectangle())
-                    .onTapGesture { openCurrentTrackArtist() }
+                HStack(spacing: 4) {
+                    Text(appState.selectedPlayer?.currentMedia?.title ?? appState.t(.noPlayback))
+                        .font(.headline)
+                        .lineLimit(1)
+                    if appState.selectedPlayer?.currentMedia != nil {
+                        Image(systemName: "chevron.right.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { openCurrentTrackAlbum() }
+
+                HStack(spacing: 4) {
+                    Text(appState.selectedPlayer?.currentMedia?.artist ?? " ")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    if appState.selectedPlayer?.currentMedia != nil {
+                        Image(systemName: "chevron.right.circle.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { openCurrentTrackArtist() }
             }
 
             HStack(spacing: 8) {
@@ -163,6 +186,7 @@ struct MenuBarContentView: View {
                 .disabled(appState.selectedPlayer?.currentMedia == nil)
 
                 Button {
+                    popoverNavigationState.requestClose()
                     openWindow(id: "search")
                 } label: {
                     Label(appState.t(.search), systemImage: "magnifyingglass")
@@ -204,6 +228,7 @@ struct MenuBarContentView: View {
                 itemId: albumRef.itemId, provider: albumRef.provider, name: albumRef.name,
                 artistName: track.artistNames.isEmpty ? nil : track.artistNames
             )
+            popoverNavigationState.requestClose()
             openWindow(id: "search")
         }
     }
@@ -219,6 +244,7 @@ struct MenuBarContentView: View {
             appState.pendingSearchDestination = .artist(
                 itemId: artistRef.itemId, provider: artistRef.provider, name: artistRef.name, uri: artistRef.uri
             )
+            popoverNavigationState.requestClose()
             openWindow(id: "search")
         }
     }
