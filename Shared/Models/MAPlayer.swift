@@ -35,6 +35,15 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
     /// einzelnen Player oder eine Sync-Gruppe handelt.
     public var effectiveVolume: Int? { volumeLevel ?? groupVolume }
 
+    /// Ob dieser Player einen eigenen Lautstärkeregler hat — Filter für
+    /// AppState.groupMembers(for:), analog zum filterVolume-Parameter von
+    /// resolveGroupMembers() im HTML-Player.
+    public var supportsVolumeControl: Bool {
+        if volumeControl == "none" { return false }
+        if let supportedFeatures, !supportedFeatures.contains("volume_set") { return false }
+        return true
+    }
+
     public init(
         playerId: String,
         name: String,

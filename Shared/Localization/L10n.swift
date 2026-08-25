@@ -51,6 +51,9 @@ public enum L10n {
 
         // GroupVolumeView
         case groupVolume
+        case groupRemove
+        case groupAdd
+        case groupAddSpeakers
 
         // PlayerPickerView
         case noPlayersAllowed

@@ -34,6 +34,9 @@ extension L10n {
         .back: (de: "Zurück", en: "Back"),
 
         .groupVolume: (de: "Gruppen-Lautstärke", en: "Group Volume"),
+        .groupRemove: (de: "Aus Gruppe entfernen", en: "Remove from Group"),
+        .groupAdd: (de: "Zur Gruppe hinzufügen", en: "Add to Group"),
+        .groupAddSpeakers: (de: "Weitere Lautsprecher", en: "Other Speakers"),
 
         .noPlayersAllowed: (de: "Keine Player freigegeben – siehe Einstellungen", en: "No players allowed – see Settings"),
 

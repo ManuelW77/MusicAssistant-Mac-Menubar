@@ -23,6 +23,19 @@ public struct PlayerIDArgs: Encodable, Sendable {
     public init(playerId: String) { self.playerId = playerId }
 }
 
+/// Für `players/cmd/group` — fügt playerId der Gruppe von targetPlayer hinzu
+/// (targetPlayer ist der Gruppenleiter, dessen Queue-ID zugleich seine
+/// Player-ID ist). `players/cmd/ungroup` (Entfernen) braucht dagegen nur die
+/// Player-ID des zu entfernenden Mitglieds, dafür reicht PlayerIDArgs.
+public struct GroupArgs: Encodable, Sendable {
+    public let playerId: String
+    public let targetPlayer: String
+    public init(playerId: String, targetPlayer: String) {
+        self.playerId = playerId
+        self.targetPlayer = targetPlayer
+    }
+}
+
 public struct VolumeArgs: Encodable, Sendable {
     public let playerId: String
     public let volumeLevel: Int

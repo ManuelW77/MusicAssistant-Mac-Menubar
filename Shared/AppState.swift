@@ -424,33 +424,61 @@ public final class AppState {
         }
     }
 
-    /// Lautstärke-fähige Mitglieder der Sync-/Gruppen-Player-Queue von
-    /// `playerId`, für GroupVolumeView — Übertragung von resolveGroupMembers()/
-    /// getGroupMembers() aus dem HTML-Player (../ma-html-player/ma-dashboard.html).
-    /// Manche MA-Player spiegeln ihre Mitgliedschaft nur beim Gruppenleiter
+    /// Mitglieder der Sync-/Gruppen-Player-Queue von `playerId`, für
+    /// GroupVolumeView — Übertragung von resolveGroupMembers()/getGroupMembers()
+    /// aus dem HTML-Player (../ma-html-player/ma-dashboard.html). Manche
+    /// MA-Player spiegeln ihre Mitgliedschaft nur beim Gruppenleiter
     /// (groupMembers/groupChilds), andere nur auf sich selbst (syncedTo/
     /// activeGroup) — beide Wege werden abgedeckt, mit dem Leader-Feld als
     /// primärer Quelle und dem Selbst-Feld als Fallback, falls das leer bleibt.
-    public func groupMembers(for playerId: String) -> [MAPlayer] {
+    /// `requireVolumeControl: false` liefert ALLE Mitglieder unabhängig von
+    /// Lautstärkefähigkeit — für die Gruppen-Verwaltung (Entfernen) in
+    /// GroupVolumeView, analog zu resolveGroupMembers(id, filterVolume: false)
+    /// im HTML-Player.
+    public func groupMembers(for playerId: String, requireVolumeControl: Bool = true) -> [MAPlayer] {
         guard let leader = players.first(where: { $0.playerId == playerId }) else { return [] }
 
-        func isVolumeCapable(_ player: MAPlayer) -> Bool {
-            if player.volumeControl == "none" { return false }
-            if let features = player.supportedFeatures, !features.contains("volume_set") { return false }
-            return true
-        }
-
         let leaderMemberIDs = (leader.groupMembers ?? leader.groupChilds ?? []).filter { $0 != playerId }
-        var members = leaderMemberIDs
-            .compactMap { id in players.first { $0.playerId == id } }
-            .filter(isVolumeCapable)
+        var members = leaderMemberIDs.compactMap { id in players.first { $0.playerId == id } }
 
         if members.isEmpty {
-            members = players
-                .filter { $0.playerId != playerId && ($0.syncedTo == playerId || $0.activeGroup == playerId) }
-                .filter(isVolumeCapable)
+            members = players.filter { $0.playerId != playerId && ($0.syncedTo == playerId || $0.activeGroup == playerId) }
         }
-        return members
+        return requireVolumeControl ? members.filter(\.supportsVolumeControl) : members
+    }
+
+    /// Player, die der Gruppe von `playerId` per `players/cmd/group`
+    /// hinzugefügt werden könnten: aus availablePlayers (respektiert die
+    /// Player-Freigabe in den Einstellungen), noch kein Mitglied, und mit dem
+    /// Feature-Flag `set_members` — analog zu canGroup/candidates in
+    /// renderGroupMenu() im HTML-Player. Leer, wenn der Gruppenleiter selbst
+    /// keine Mitglieder verwalten kann.
+    public func groupingCandidates(for playerId: String) -> [MAPlayer] {
+        guard let leader = players.first(where: { $0.playerId == playerId }),
+              leader.supportedFeatures?.contains("set_members") == true else { return [] }
+
+        let memberIDs = Set(groupMembers(for: playerId, requireVolumeControl: false).map(\.playerId))
+        return availablePlayers.filter { candidate in
+            candidate.playerId != playerId
+                && !memberIDs.contains(candidate.playerId)
+                && (candidate.supportedFeatures?.contains("set_members") ?? false)
+        }
+    }
+
+    /// Fügt `playerId` der Gruppe des aktuell gewählten Players hinzu.
+    public func addToGroup(_ playerId: String) {
+        guard let client, let leaderId = selectedPlayerID else { return }
+        Task {
+            try? await client.sendRaw("players/cmd/group", args: GroupArgs(playerId: playerId, targetPlayer: leaderId))
+        }
+    }
+
+    /// Entfernt `playerId` aus jeder Sync-/Gruppenzugehörigkeit.
+    public func removeFromGroup(_ playerId: String) {
+        guard let client else { return }
+        Task {
+            try? await client.sendRaw("players/cmd/ungroup", args: PlayerIDArgs(playerId: playerId))
+        }
     }
 
     /// Für den "Verbindung testen"-Button im Settings-Dialog: baut eine eigene,

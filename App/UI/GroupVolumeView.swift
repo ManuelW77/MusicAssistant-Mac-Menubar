@@ -2,25 +2,38 @@ import SwiftUI
 import MAMenubarLib
 
 /// Haupt-Lautstärkeregler plus, sofern der gewählte Player eine Sync-/
-/// Gruppen-Player-Queue mit lautstärkefähigen Mitgliedern ist, ein
-/// Gruppen-Icon daneben, das bei Klick die einzelnen Mitglieder-Regler
-/// einblendet — Pendant zur "Gruppen-Lautstärke"-Sektion im HTML-Player
-/// (../ma-html-player/ma-dashboard.html, renderVolumeMembers()), aber ohne
-/// im eingeklappten Zustand eine eigene Zeile zu belegen. Mitglieder-Updates
-/// (z.B. Lautstärke extern geändert) kommen wie beim Hauptplayer über die
-/// normalen playerUpdated-Events in AppState.players an, kein Extra-Polling
-/// nötig.
+/// Gruppen-Player-Queue ist, ein Gruppen-Icon daneben, das bei Klick eine
+/// Verwaltungsansicht einblendet: je Mitglied ein Lautstärkeregler mit
+/// Entfernen-Button, darunter (falls der Gruppenleiter `set_members`
+/// unterstützt) weitere freigegebene Player zum Hinzufügen — Pendant zu
+/// renderVolumeMembers()/renderGroupMenu() im HTML-Player
+/// (../ma-html-player/ma-dashboard.html), aber in einer einzigen
+/// aufklappbaren Ansicht statt zweier getrennter UI-Bereiche, und ohne im
+/// eingeklappten Zustand eine eigene Zeile zu belegen. Updates (z.B.
+/// Lautstärke oder Gruppenzugehörigkeit extern geändert) kommen wie beim
+/// Hauptplayer über die normalen playerUpdated-Events in AppState.players
+/// an, kein Extra-Polling nötig.
 struct GroupVolumeView: View {
     @Environment(AppState.self) private var appState
     @State private var isExpanded = false
 
+    /// Alle Mitglieder unabhängig von Lautstärkefähigkeit (requireVolumeControl:
+    /// false) — für die Verwaltungsansicht braucht es auch entfernbare
+    /// Mitglieder ohne eigenen Lautstärkeregler.
     private var members: [MAPlayer] {
         guard let playerID = appState.selectedPlayerID else { return [] }
-        return appState.groupMembers(for: playerID)
+        return appState.groupMembers(for: playerID, requireVolumeControl: false)
+    }
+
+    private var candidates: [MAPlayer] {
+        guard let playerID = appState.selectedPlayerID else { return [] }
+        return appState.groupingCandidates(for: playerID)
     }
 
     var body: some View {
         let members = members
+        let candidates = candidates
+        let hasContent = !members.isEmpty || !candidates.isEmpty
 
         VStack(spacing: 8) {
             HStack(spacing: 8) {
@@ -28,7 +41,7 @@ struct GroupVolumeView: View {
                     appState.setVolume(level)
                 }
 
-                if !members.isEmpty {
+                if hasContent {
                     // Bewusst OHNE withAnimation(): MenuBarContentView lebt in
                     // einem NSHostingController mit sizingOptions =
                     // .preferredContentSize (siehe AppDelegate.swift), der
@@ -65,8 +78,8 @@ struct GroupVolumeView: View {
                 }
             }
 
-            if isExpanded && !members.isEmpty {
-                MembersRevealView(members: members)
+            if isExpanded && hasContent {
+                MembersRevealView(members: members, candidates: candidates)
             }
         }
         // Beim Player-Wechsel schließen — sonst bliebe die Ansicht z.B. für
@@ -77,7 +90,7 @@ struct GroupVolumeView: View {
     }
 }
 
-/// Reine Optik für das Einblenden der Mitglieder-Regler: die umgebende
+/// Reine Optik für das Einblenden der Verwaltungsansicht: die umgebende
 /// VStack in GroupVolumeView reserviert den Platz sofort/unanimiert (siehe
 /// Kommentar dort), erst NACH dem Erscheinen (`.onAppear`, Layout also schon
 /// fertig) startet diese View ihre eigene, rein lokale Animation von
@@ -87,20 +100,64 @@ struct GroupVolumeView: View {
 /// kollidiert.
 private struct MembersRevealView: View {
     let members: [MAPlayer]
+    let candidates: [MAPlayer]
     @Environment(AppState.self) private var appState
     @State private var isRevealed = false
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             ForEach(members) { member in
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(member.name)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    HStack(spacing: 4) {
+                        Text(member.name)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                        Spacer()
+                        Button {
+                            appState.removeFromGroup(member.playerId)
+                        } label: {
+                            Image(systemName: "minus.circle.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help(appState.t(.groupRemove))
+                    }
 
-                    VolumeSliderView(volumeLevel: member.effectiveVolume) { level in
-                        appState.setVolume(level, for: member.playerId)
+                    if member.supportsVolumeControl {
+                        VolumeSliderView(volumeLevel: member.effectiveVolume) { level in
+                            appState.setVolume(level, for: member.playerId)
+                        }
+                    }
+                }
+            }
+
+            if !candidates.isEmpty {
+                if !members.isEmpty {
+                    Divider()
+                }
+
+                Text(appState.t(.groupAddSpeakers))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                ForEach(candidates) { candidate in
+                    HStack(spacing: 4) {
+                        Text(candidate.name)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                        Spacer()
+                        Button {
+                            appState.addToGroup(candidate.playerId)
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help(appState.t(.groupAdd))
                     }
                 }
             }
