@@ -33,6 +33,8 @@ extension L10n {
         .search: (de: "Suche", en: "Search"),
         .back: (de: "Zurück", en: "Back"),
 
+        .groupVolume: (de: "Gruppen-Lautstärke", en: "Group Volume"),
+
         .noPlayersAllowed: (de: "Keine Player freigegeben – siehe Einstellungen", en: "No players allowed – see Settings"),
 
         .noTrack: (de: "Kein Titel", en: "No track"),

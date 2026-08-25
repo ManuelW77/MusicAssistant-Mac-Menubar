@@ -413,12 +413,44 @@ public final class AppState {
         playPauseTimeoutTask = nil
     }
 
-    public func setVolume(_ level: Int) {
-        guard let client, let playerId = selectedPlayerID else { return }
+    /// `playerId` erlaubt gezieltes Setzen der Lautstärke einzelner
+    /// Gruppenmitglieder (GroupVolumeView) statt immer nur des gewählten
+    /// Players — Default bleibt daher `selectedPlayerID`.
+    public func setVolume(_ level: Int, for playerId: String? = nil) {
+        guard let client, let targetId = playerId ?? selectedPlayerID else { return }
         let clamped = min(max(level, 0), 100)
         Task {
-            try? await client.sendRaw("players/cmd/volume_set", args: VolumeArgs(playerId: playerId, volumeLevel: clamped))
+            try? await client.sendRaw("players/cmd/volume_set", args: VolumeArgs(playerId: targetId, volumeLevel: clamped))
         }
+    }
+
+    /// Lautstärke-fähige Mitglieder der Sync-/Gruppen-Player-Queue von
+    /// `playerId`, für GroupVolumeView — Übertragung von resolveGroupMembers()/
+    /// getGroupMembers() aus dem HTML-Player (../ma-html-player/ma-dashboard.html).
+    /// Manche MA-Player spiegeln ihre Mitgliedschaft nur beim Gruppenleiter
+    /// (groupMembers/groupChilds), andere nur auf sich selbst (syncedTo/
+    /// activeGroup) — beide Wege werden abgedeckt, mit dem Leader-Feld als
+    /// primärer Quelle und dem Selbst-Feld als Fallback, falls das leer bleibt.
+    public func groupMembers(for playerId: String) -> [MAPlayer] {
+        guard let leader = players.first(where: { $0.playerId == playerId }) else { return [] }
+
+        func isVolumeCapable(_ player: MAPlayer) -> Bool {
+            if player.volumeControl == "none" { return false }
+            if let features = player.supportedFeatures, !features.contains("volume_set") { return false }
+            return true
+        }
+
+        let leaderMemberIDs = (leader.groupMembers ?? leader.groupChilds ?? []).filter { $0 != playerId }
+        var members = leaderMemberIDs
+            .compactMap { id in players.first { $0.playerId == id } }
+            .filter(isVolumeCapable)
+
+        if members.isEmpty {
+            members = players
+                .filter { $0.playerId != playerId && ($0.syncedTo == playerId || $0.activeGroup == playerId) }
+                .filter(isVolumeCapable)
+        }
+        return members
     }
 
     /// Für den "Verbindung testen"-Button im Settings-Dialog: baut eine eigene,

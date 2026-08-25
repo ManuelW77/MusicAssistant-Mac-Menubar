@@ -49,6 +49,9 @@ public enum L10n {
         case search
         case back
 
+        // GroupVolumeView
+        case groupVolume
+
         // PlayerPickerView
         case noPlayersAllowed
 

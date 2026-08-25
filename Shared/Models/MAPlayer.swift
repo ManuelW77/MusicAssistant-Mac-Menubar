@@ -14,6 +14,20 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
     /// Bei Sync-Gruppen-Playern (type == "group") liefert der Server für
     /// volumeLevel null; der aggregierte Wert steckt stattdessen hier.
     public var groupVolume: Int?
+    /// Mitglieder-IDs einer Sync-/Gruppen-Player-Queue, primäre Quelle für
+    /// AppState.groupMembers(for:) (siehe dort — analog zu resolveGroupMembers()
+    /// im HTML-Player unter ../ma-html-player/ma-dashboard.html: manche
+    /// MA-Player melden das über group_members, andere über group_childs).
+    public var groupMembers: [String]?
+    public var groupChilds: [String]?
+    /// Fallback, falls die Mitgliedschaft nur auf dem Mitglied selbst steht
+    /// statt beim Gruppenleiter (group_members/group_childs).
+    public var syncedTo: String?
+    public var activeGroup: String?
+    public var supportedFeatures: [String]?
+    /// "none" bedeutet: dieser Player hat keinen eigenen Lautstärkeregler
+    /// (z.B. ein reiner Gruppenleiter-Eintrag ohne echtes Ausgabegerät).
+    public var volumeControl: String?
 
     public var id: String { playerId }
 
@@ -28,7 +42,13 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
         playbackState: PlaybackState? = nil,
         currentMedia: PlayerMedia? = nil,
         volumeLevel: Int? = nil,
-        groupVolume: Int? = nil
+        groupVolume: Int? = nil,
+        groupMembers: [String]? = nil,
+        groupChilds: [String]? = nil,
+        syncedTo: String? = nil,
+        activeGroup: String? = nil,
+        supportedFeatures: [String]? = nil,
+        volumeControl: String? = nil
     ) {
         self.playerId = playerId
         self.name = name
@@ -37,6 +57,12 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
         self.currentMedia = currentMedia
         self.volumeLevel = volumeLevel
         self.groupVolume = groupVolume
+        self.groupMembers = groupMembers
+        self.groupChilds = groupChilds
+        self.syncedTo = syncedTo
+        self.activeGroup = activeGroup
+        self.supportedFeatures = supportedFeatures
+        self.volumeControl = volumeControl
     }
 }
 
