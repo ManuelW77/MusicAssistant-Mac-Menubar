@@ -68,6 +68,15 @@ public final class AppState {
 
     /// Server-Info von `GET /info`, für `usesQueueCrossfadeAPI` unten.
     public private(set) var serverInfo: ServerInfo?
+
+    /// Erhöht sich bei jedem `queue_updated`-Event für die Queue des aktuell
+    /// gewählten Players (z.B. Shuffle/Crossfade extern in MA selbst
+    /// umgeschaltet). ShuffleButtonView/CrossfadeButtonView beobachten das
+    /// über `.onChange`, um ihren lokal zwischengespeicherten Status per
+    /// loadShuffleEnabled()/loadCrossfadeEnabled() neu zu laden — die reinen
+    /// playerUpdated-Events tragen den Queue-Status nicht, da er auf
+    /// PlayerQueueInfo statt MAPlayer liegt.
+    public private(set) var queueUpdateToken = 0
     /// Aktuell angezeigter Fortschritt (0…1), lokal aus dem letzten
     /// Server-Anker hochgezählt, oder `nil`, wenn `currentMedia` (noch) kein
     /// `elapsedTimeLastUpdated` liefert — die UI fällt dann automatisch auf
@@ -235,6 +244,9 @@ public final class AppState {
         case .playerRemoved:
             guard let removedId = event.objectId else { return }
             players.removeAll { $0.playerId == removedId }
+        case .queueUpdated:
+            guard event.objectId == selectedPlayerID else { return }
+            queueUpdateToken += 1
         default:
             break
         }

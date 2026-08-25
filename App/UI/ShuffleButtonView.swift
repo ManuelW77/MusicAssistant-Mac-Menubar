@@ -23,12 +23,19 @@ struct ShuffleButtonView: View {
         .help(shuffleEnabled == true ? appState.t(.shuffleDisable) : appState.t(.shuffleEnable))
         .disabled(appState.selectedPlayerID == nil || isWorking)
         .task(id: appState.selectedPlayerID) {
-            do {
-                shuffleEnabled = try await appState.loadShuffleEnabled()
-                print("ShuffleButtonView: geladen, shuffleEnabled=\(String(describing: shuffleEnabled))")
-            } catch {
-                print("ShuffleButtonView: Laden fehlgeschlagen: \(error)")
-            }
+            await reload()
+        }
+        .onChange(of: appState.queueUpdateToken) {
+            Task { await reload() }
+        }
+    }
+
+    private func reload() async {
+        do {
+            shuffleEnabled = try await appState.loadShuffleEnabled()
+            print("ShuffleButtonView: geladen, shuffleEnabled=\(String(describing: shuffleEnabled))")
+        } catch {
+            print("ShuffleButtonView: Laden fehlgeschlagen: \(error)")
         }
     }
 

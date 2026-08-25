@@ -158,8 +158,8 @@ struct MenuBarContentView: View {
                         .lineLimit(1)
                     if appState.selectedPlayer?.currentMedia != nil {
                         Image(systemName: "chevron.right.circle.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .contentShape(Rectangle())

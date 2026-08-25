@@ -25,12 +25,19 @@ struct CrossfadeButtonView: View {
         .help(crossfadeEnabled == true ? appState.t(.smartCrossfadeDisable) : appState.t(.smartCrossfadeEnable))
         .disabled(appState.selectedPlayerID == nil || isWorking)
         .task(id: appState.selectedPlayerID) {
-            do {
-                crossfadeEnabled = try await appState.loadCrossfadeEnabled()
-                print("CrossfadeButtonView: geladen, crossfadeEnabled=\(String(describing: crossfadeEnabled))")
-            } catch {
-                print("CrossfadeButtonView: Laden fehlgeschlagen: \(error)")
-            }
+            await reload()
+        }
+        .onChange(of: appState.queueUpdateToken) {
+            Task { await reload() }
+        }
+    }
+
+    private func reload() async {
+        do {
+            crossfadeEnabled = try await appState.loadCrossfadeEnabled()
+            print("CrossfadeButtonView: geladen, crossfadeEnabled=\(String(describing: crossfadeEnabled))")
+        } catch {
+            print("CrossfadeButtonView: Laden fehlgeschlagen: \(error)")
         }
     }
 
