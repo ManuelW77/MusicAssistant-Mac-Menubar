@@ -1,11 +1,12 @@
 import SwiftUI
 import MAMenubarLib
 
-/// Aufklappbarer Bereich mit je einem Lautstärkeregler pro Mitglied einer
-/// Sync-/Gruppen-Player-Queue — Pendant zur "Gruppen-Lautstärke"-Sektion im
-/// HTML-Player (../ma-html-player/ma-dashboard.html, renderVolumeMembers()).
-/// Erscheint nur, wenn der gewählte Player überhaupt lautstärkefähige
-/// Gruppenmitglieder hat (AppState.groupMembers(for:)); Mitglieder-Updates
+/// Haupt-Lautstärkeregler plus, sofern der gewählte Player eine Sync-/
+/// Gruppen-Player-Queue mit lautstärkefähigen Mitgliedern ist, ein
+/// Gruppen-Icon daneben, das bei Klick die einzelnen Mitglieder-Regler
+/// einblendet — Pendant zur "Gruppen-Lautstärke"-Sektion im HTML-Player
+/// (../ma-html-player/ma-dashboard.html, renderVolumeMembers()), aber ohne
+/// im eingeklappten Zustand eine eigene Zeile zu belegen. Mitglieder-Updates
 /// (z.B. Lautstärke extern geändert) kommen wie beim Hauptplayer über die
 /// normalen playerUpdated-Events in AppState.players an, kein Extra-Polling
 /// nötig.
@@ -20,41 +21,60 @@ struct GroupVolumeView: View {
 
     var body: some View {
         let members = members
-        if !members.isEmpty {
-            VStack(spacing: 6) {
-                Button {
-                    isExpanded.toggle()
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(appState.t(.groupVolume))
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .contentShape(Rectangle())
+
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                VolumeSliderView(volumeLevel: appState.selectedPlayer?.effectiveVolume) { level in
+                    appState.setVolume(level)
                 }
-                .buttonStyle(.plain)
 
-                if isExpanded {
-                    VStack(spacing: 8) {
-                        ForEach(members) { member in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(member.name)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
+                if !members.isEmpty {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isExpanded.toggle()
+                        }
+                    } label: {
+                        Image(systemName: "hifispeaker.2.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 14, height: 14)
+                            .foregroundStyle(isExpanded ? .green : .primary)
+                    }
+                    .buttonStyle(.glass)
+                    // hifispeaker.2.fill zeigt zwei Geräte nebeneinander statt eines
+                    // einzelnen quadratischen Symbols wie bei den anderen Buttons
+                    // (heart, shuffle.circle, …) — .glass bemisst die Pillenbreite
+                    // an einem nackten Image (ohne Label) offenbar großzügiger als
+                    // an deren Label(...).labelStyle(.iconOnly). Ein explizites
+                    // Frame auf dem Button selbst (statt nur auf dem Icon) deckelt
+                    // die Gesamtbreite hart auf die Größe der anderen Buttons.
+                    .frame(width: 32, height: 32)
+                    .help(appState.t(.groupVolume))
+                }
+            }
 
-                                VolumeSliderView(volumeLevel: member.effectiveVolume) { level in
-                                    appState.setVolume(level, for: member.playerId)
-                                }
+            if isExpanded && !members.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(members) { member in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(member.name)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+
+                            VolumeSliderView(volumeLevel: member.effectiveVolume) { level in
+                                appState.setVolume(level, for: member.playerId)
                             }
                         }
                     }
                 }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            .animation(.easeInOut(duration: 0.2), value: isExpanded)
+        }
+        // Beim Player-Wechsel schließen — sonst bliebe die Ansicht z.B. für
+        // einen Einzelplayer ohne Gruppe fälschlich "aufgeklappt" hängen.
+        .onChange(of: appState.selectedPlayerID) { _, _ in
+            isExpanded = false
         }
     }
 }
