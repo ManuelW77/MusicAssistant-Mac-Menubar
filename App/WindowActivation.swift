@@ -23,6 +23,16 @@ enum WindowActivation {
         // gesetzt werden — SwiftUIs `Window`-Szene gibt keinen direkten
         // NSWindow-Zugriff zur Erzeugungszeit her.
         for window in NSApp.windows {
+            // .canJoinAllSpaces und .moveToActiveSpace sind laut
+            // NSWindowCollectionBehavior gegenseitig exklusive "primary
+            // options" — beide gleichzeitig gesetzt lässt
+            // -[NSWindow _validateCollectionBehavior:] eine Exception werfen.
+            // NSApp.windows enthält u.a. das interne NSStatusBarWindow des
+            // Menüleisten-Icons, das bereits .canJoinAllSpaces trägt (damit
+            // es auf jedem Space sichtbar bleibt) — das hat genau diesen
+            // Crash beim Öffnen der Einstellungen über das Kontextmenü
+            // ausgelöst.
+            guard !window.collectionBehavior.contains(.canJoinAllSpaces) else { continue }
             window.collectionBehavior.insert(.moveToActiveSpace)
         }
     }
