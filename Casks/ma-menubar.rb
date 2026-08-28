@@ -1,6 +1,6 @@
 cask "ma-menubar" do
-  version "1.6.1"
-  sha256 "e40cd26efd4d38bb4156eef089cc57dda875a95553551e4ee874402a0fc36649"
+  version "1.6.2"
+  sha256 "058051c7cbd8356eb97a474a678cb9245c5678d8bff59a64bcbe499e8bac119a"
 
   url "https://github.com/ManuelW77/MusicAssistant-Mac-Menubar/releases/download/v#{version}/MA-Menubar-v#{version}.dmg"
   name "MA Menubar"
