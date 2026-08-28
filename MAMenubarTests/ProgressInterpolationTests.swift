@@ -103,6 +103,63 @@ struct ProgressInterpolationTests {
         #expect(selection == "a")
     }
 
+    @Test("wählt die spielende Gruppe, nicht einen mitspielenden Lautsprecher")
+    func resolvedSelectionPrefersPlayingGroupOverMember() {
+        let candidates = [
+            MAPlayer(playerId: "spk1", name: "Küche", playbackState: .playing, type: "player"),
+            MAPlayer(playerId: "spk2", name: "Wohnzimmer", playbackState: .playing, type: "player"),
+            MAPlayer(playerId: "grp", name: "Erdgeschoss", playbackState: .playing, type: "group",
+                     groupMembers: ["spk1", "spk2"])
+        ]
+        let selection = AppState.resolvedSelection(candidates: candidates, currentSelection: nil)
+        #expect(selection == "grp")
+    }
+
+    @Test("AirPlay-Leader mit group_childs ist keine Gruppe (type == player)")
+    func resolvedSelectionTreatsAirPlayLeaderAsSpeaker() {
+        let candidates = [
+            MAPlayer(playerId: "homepod", name: "Wohnzimmer", playbackState: .playing, type: "player",
+                     groupChilds: ["homepod-kueche"]),
+            MAPlayer(playerId: "spk2", name: "Küche", playbackState: .idle, type: "player")
+        ]
+        let selection = AppState.resolvedSelection(candidates: candidates, currentSelection: nil)
+        #expect(selection == "homepod")
+    }
+
+    @Test("läuft über activeGroup zur Gruppe hoch, wenn die Gruppe nicht selbst playing meldet")
+    func resolvedSelectionResolvesGroupViaMemberMembership() {
+        let candidates = [
+            MAPlayer(playerId: "spk1", name: "Küche", playbackState: .playing, type: "player",
+                     activeGroup: "grp"),
+            MAPlayer(playerId: "grp", name: "Erdgeschoss", playbackState: .idle, type: "group",
+                     groupMembers: ["spk1"])
+        ]
+        let selection = AppState.resolvedSelection(candidates: candidates, currentSelection: nil)
+        #expect(selection == "grp")
+    }
+
+    @Test("behält die aktuell spielende Auswahl statt zu einem anderen spielenden Player zu springen")
+    func resolvedSelectionKeepsCurrentlyPlayingSelection() {
+        let candidates = [
+            MAPlayer(playerId: "a", name: "A", playbackState: .playing, type: "player"),
+            MAPlayer(playerId: "b", name: "B", playbackState: .playing, type: "player")
+        ]
+        let selection = AppState.resolvedSelection(candidates: candidates, currentSelection: "b")
+        #expect(selection == "b")
+    }
+
+    @Test("hebt eine spielende Mitglieds-Auswahl auf die ebenfalls spielende Gruppe an")
+    func resolvedSelectionUpgradesPlayingMemberSelectionToGroup() {
+        let candidates = [
+            MAPlayer(playerId: "spk1", name: "Küche", playbackState: .playing, type: "player",
+                     syncedTo: "grp"),
+            MAPlayer(playerId: "grp", name: "Erdgeschoss", playbackState: .playing, type: "group",
+                     groupMembers: ["spk1"])
+        ]
+        let selection = AppState.resolvedSelection(candidates: candidates, currentSelection: "spk1")
+        #expect(selection == "grp")
+    }
+
     @Test("behält gültige manuelle Auswahl, wenn keiner spielt")
     func resolvedSelectionKeepsValidSelectionWhenNothingPlays() {
         let candidates = [

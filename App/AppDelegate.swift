@@ -174,7 +174,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             startOutsideClickMonitor()
             // Leichtgewichtiger Sicherheitsnetz-Refresh beim Öffnen (z.B. für
             // verpasste Events) — no-op, falls gerade kein Client verbunden ist.
-            Task { await appState.reloadPlayers() }
+            // Bewusst kurz verzögert: läuft er synchron beim Öffnen, kollidiert
+            // das dadurch ausgelöste SwiftUI-Update (players wird neu gesetzt)
+            // zuverlässig mit dem ersten Klick auf das Player-Dropdown — das
+            // native Picker-Menü klappt dann kurz auf und sofort wieder zu und
+            // fängt erst beim zweiten Klick. Nach der Verzögerung ist die Liste
+            // stabil, bevor der Nutzer interagiert.
+            Task {
+                try? await Task.sleep(for: .milliseconds(700))
+                guard popover.isShown else { return }
+                await appState.reloadPlayers()
+            }
         }
     }
 
