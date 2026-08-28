@@ -44,12 +44,28 @@ public final class AppState {
         }
     }
 
+    /// True, sobald der Nutzer im Dropdown selbst einen Player gewählt hat.
+    /// Solange gesetzt, überschreibt die playback-getriebene Auto-Vorauswahl
+    /// (`reconcileSelectionWithPlayback()`) diese Wahl nicht. Wird bei
+    /// (Re-)Connect / manuellem "Player neu laden" zurückgesetzt, ebenso
+    /// sobald die manuell gewählte Auswahl selbst zu spielen beginnt oder aus
+    /// der Player-Liste verschwindet.
+    private var selectionIsManual = false
+
     public var availablePlayers: [MAPlayer] {
         players.filter { settings.allowedPlayerIDs.contains($0.playerId) }
     }
 
     public var selectedPlayer: MAPlayer? {
         players.first { $0.playerId == selectedPlayerID }
+    }
+
+    /// Vom Player-Dropdown aufgerufen: markiert die Auswahl als bewusst manuell,
+    /// damit ein anschließend startendes Gruppen-/Player-Playback sie nicht
+    /// gleich wieder wegschaltet.
+    public func selectPlayerManually(_ id: String?) {
+        selectionIsManual = true
+        selectedPlayerID = id
     }
 
     public private(set) var updateInfo: UpdateChecker.UpdateInfo?
@@ -240,10 +256,12 @@ public final class AppState {
             if player.playerId == selectedPlayerID {
                 clearPlayPausePending()
             }
+            reconcileSelectionWithPlayback()
             updateDisplayedPlaybackProgress()
         case .playerRemoved:
             guard let removedId = event.objectId else { return }
             players.removeAll { $0.playerId == removedId }
+            reconcileSelectionWithPlayback()
         case .queueUpdated:
             guard event.objectId == selectedPlayerID else { return }
             queueUpdateToken += 1
@@ -256,35 +274,102 @@ public final class AppState {
         guard let client else { return }
         do {
             let list: [MAPlayer] = try await client.send("players/all", args: NoArgs())
-            players = list
+            // Nur bei tatsächlicher Änderung zuweisen: ein no-op-Refresh (z.B.
+            // der Sicherheitsnetz-Reload beim Popover-Öffnen) soll keine
+            // SwiftUI-Neuberechnung auslösen — die kann sonst ein gerade
+            // geöffnetes Picker-Menü im Popover wieder zuklappen.
+            if list != players {
+                players = list
+            }
             for player in list {
                 logCurrentMediaDebugInfo(for: player)
             }
+            // Frische Verbindung / expliziter Reload = frischer Stand: eine
+            // frühere manuelle Wahl gilt hier nicht mehr als bindend.
+            selectionIsManual = false
             selectedPlayerID = Self.resolvedSelection(candidates: availablePlayers, currentSelection: selectedPlayerID)
         } catch {
             connectionStatus = .error(L10n.playerListLoadFailed("\(error)", uiLanguage))
         }
     }
 
-    /// Bestimmt die zu wählende Player-ID beim Neuladen der Player-Liste:
-    /// bevorzugt den ersten aktuell spielenden Player aus `candidates` (in
-    /// deterministischer Listenreihenfolge, nicht Set-Reihenfolge). Spielt
-    /// keiner, bleibt eine bestehende Auswahl unangetastet, solange sie noch
-    /// unter den Kandidaten ist — ein Refresh soll keine manuelle Auswahl
-    /// überschreiben, nur weil gerade nirgends etwas läuft. Ist die Auswahl
-    /// ungültig (z. B. Whitelist geändert) oder noch keine getroffen, fällt
+    /// Bestimmt die zu wählende Player-ID — sowohl beim (Re-)Connect als auch
+    /// live bei `playerUpdated`-Events (siehe `reconcileSelectionWithPlayback()`).
+    /// Priorität, solange überhaupt etwas spielt:
+    /// 1. Die aktuelle Auswahl behalten, wenn sie selbst spielt — außer sie
+    ///    spielt nur als Mitglied einer ebenfalls sichtbaren, spielenden
+    ///    Gruppe: dann gewinnt die Gruppe (das ist der eigentliche Bugfix —
+    ///    ein Einzel-Lautsprecher soll nicht die Gruppe „überdecken").
+    /// 2. Sonst die erste spielende Gruppe (`isGroup`).
+    /// 3. Sonst ein spielendes Mitglied zu seiner sichtbaren Gruppe hochlaufen.
+    /// 4. Sonst der erste spielende Player in Listenreihenfolge.
+    /// Spielt keiner, bleibt eine bestehende (ggf. manuelle) Auswahl
+    /// unangetastet, solange sie noch unter den Kandidaten ist; sonst fällt
     /// sie auf den ersten Kandidaten zurück.
     nonisolated static func resolvedSelection(
         candidates: [MAPlayer],
         currentSelection: String?
     ) -> String? {
-        if let playing = candidates.first(where: { $0.playbackState == .playing }) {
-            return playing.playerId
+        let playing = candidates.filter { $0.playbackState == .playing }
+        if !playing.isEmpty {
+            // 1. Aktuelle Auswahl spielt selbst → behalten (kein Flattern
+            //    zwischen mehreren gleichzeitig spielenden Playern), es sei
+            //    denn sie hängt als Mitglied an einer spielenden Gruppe.
+            if let current = playing.first(where: { $0.playerId == currentSelection }) {
+                if !current.isGroup,
+                   let parentId = current.activeGroup ?? current.syncedTo,
+                   playing.contains(where: { $0.playerId == parentId }) {
+                    return parentId
+                }
+                return current.playerId
+            }
+            // 2. Spielende Gruppe bevorzugen.
+            if let group = playing.first(where: \.isGroup) {
+                return group.playerId
+            }
+            // 3. Gruppe meldet nicht immer selbst `playing` — dann über die
+            //    Gruppenzugehörigkeit eines spielenden Mitglieds zur Gruppe
+            //    hochlaufen, sofern die Gruppe selbst Kandidat ist.
+            for member in playing {
+                if let parentId = member.activeGroup ?? member.syncedTo,
+                   candidates.contains(where: { $0.playerId == parentId }) {
+                    return parentId
+                }
+            }
+            // 4. Erster spielender Player in Listenreihenfolge.
+            return playing.first?.playerId
         }
         if let currentSelection, candidates.contains(where: { $0.playerId == currentSelection }) {
             return currentSelection
         }
         return candidates.first?.playerId
+    }
+
+    /// Live-Nachführung der Player-Vorauswahl bei `playerUpdated`/`playerRemoved`:
+    /// startet z. B. eine Gruppe zu spielen, während die App schon verbunden
+    /// ist, wandert die Auswahl auf die Gruppe. Eine bewusste manuelle Wahl
+    /// (`selectPlayerManually(_:)`) wird dabei nicht überschrieben — sie wird
+    /// erst wieder freigegeben, sobald sie selbst spielt oder aus der
+    /// Player-Liste verschwindet.
+    private func reconcileSelectionWithPlayback() {
+        let desired = Self.resolvedSelection(candidates: availablePlayers, currentSelection: selectedPlayerID)
+
+        if selectionIsManual {
+            let stillPresent = players.contains { $0.playerId == selectedPlayerID }
+            let selfPlaying = players.first { $0.playerId == selectedPlayerID }?.playbackState == .playing
+            // Manuelle Wahl erst wieder freigeben, wenn sie „eingerastet" ist:
+            // aus der Liste verschwunden, ODER sie spielt jetzt selbst und
+            // `resolvedSelection` würde sie ohnehin behalten. Dann übernimmt
+            // die Auto-Nachführung künftige Playback-/Gruppenwechsel wieder.
+            if !stillPresent || (selfPlaying && desired == selectedPlayerID) {
+                selectionIsManual = false
+            }
+        }
+        guard !selectionIsManual else { return }
+
+        if let desired, desired != selectedPlayerID {
+            selectedPlayerID = desired
+        }
     }
 
     // Temporäre Diagnose, um zu klären, ob der Server duration/elapsedTime für

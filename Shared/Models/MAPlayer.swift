@@ -9,6 +9,12 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
     public var name: String
     public var available: Bool?
     public var playbackState: PlaybackState?
+    /// Music-Assistant-Player-Typ (`type` im Server-JSON): "player" für ein
+    /// echtes Ausgabegerät, "group"/"sync_group" für einen Gruppen-Player.
+    /// Wichtig: AirPlay-Leader wie ein HomePod sind "player", obwohl sie
+    /// `group_childs` melden (die AirPlay-Ziele, an die sie streamen können) —
+    /// deshalb ist `type`, nicht die Mitgliederliste, das Kriterium für `isGroup`.
+    public var type: String?
     public var currentMedia: PlayerMedia?
     public var volumeLevel: Int?
     /// Bei Sync-Gruppen-Playern (type == "group") liefert der Server für
@@ -35,6 +41,14 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
     /// einzelnen Player oder eine Sync-Gruppe handelt.
     public var effectiveVolume: Int? { volumeLevel ?? groupVolume }
 
+    /// Ob dieser Player ein Gruppen-Player ist (kein echtes Einzelgerät).
+    /// Kriterium ist ausschließlich der Server-`type` — die Anwesenheit von
+    /// group_members/group_childs allein reicht nicht (ein HomePad/HomePod als
+    /// AirPlay-Leader meldet group_childs, ist aber type == "player").
+    public var isGroup: Bool {
+        type == "group" || type == "sync_group"
+    }
+
     /// Ob dieser Player einen eigenen Lautstärkeregler hat — Filter für
     /// AppState.groupMembers(for:), analog zum filterVolume-Parameter von
     /// resolveGroupMembers() im HTML-Player.
@@ -49,6 +63,7 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
         name: String,
         available: Bool? = nil,
         playbackState: PlaybackState? = nil,
+        type: String? = nil,
         currentMedia: PlayerMedia? = nil,
         volumeLevel: Int? = nil,
         groupVolume: Int? = nil,
@@ -63,6 +78,7 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
         self.name = name
         self.available = available
         self.playbackState = playbackState
+        self.type = type
         self.currentMedia = currentMedia
         self.volumeLevel = volumeLevel
         self.groupVolume = groupVolume
@@ -72,6 +88,15 @@ public struct MAPlayer: Codable, Identifiable, Equatable, Sendable {
         self.activeGroup = activeGroup
         self.supportedFeatures = supportedFeatures
         self.volumeControl = volumeControl
+    }
+}
+
+public extension Sequence where Element == MAPlayer {
+    /// Natürliche alphabetische Sortierung nach `name` — zahlen- und
+    /// umlautbewusst (localizedStandardCompare, wie im Finder). Genutzt für
+    /// alle Player-Listen in der UI (PlayerPickerView, GroupVolumeView).
+    func sortedByName() -> [MAPlayer] {
+        sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 }
 

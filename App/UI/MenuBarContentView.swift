@@ -208,7 +208,7 @@ struct MenuBarContentView: View {
 
             GroupVolumeView()
 
-            PlayerPickerView(players: appState.availablePlayers, selectedPlayerID: $appState.selectedPlayerID)
+            PlayerPickerView(players: appState.availablePlayers)
 
             ConnectionStatusView(status: appState.connectionStatus)
         }

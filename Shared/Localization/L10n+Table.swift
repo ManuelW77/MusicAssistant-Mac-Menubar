@@ -39,6 +39,8 @@ extension L10n {
         .groupAddSpeakers: (de: "Weitere Lautsprecher", en: "Other Speakers"),
 
         .noPlayersAllowed: (de: "Keine Player freigegeben – siehe Einstellungen", en: "No players allowed – see Settings"),
+        .playerPickerGroups: (de: "Gruppen", en: "Groups"),
+        .playerPickerSpeakers: (de: "Lautsprecher", en: "Speakers"),
 
         .noTrack: (de: "Kein Titel", en: "No track"),
         .retry: (de: "Erneut versuchen", en: "Try Again"),

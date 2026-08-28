@@ -57,6 +57,8 @@ public enum L10n {
 
         // PlayerPickerView
         case noPlayersAllowed
+        case playerPickerGroups
+        case playerPickerSpeakers
 
         // AddToPlaylistView
         case noTrack

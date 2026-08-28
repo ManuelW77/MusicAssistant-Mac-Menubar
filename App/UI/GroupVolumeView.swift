@@ -22,12 +22,12 @@ struct GroupVolumeView: View {
     /// Mitglieder ohne eigenen Lautstärkeregler.
     private var members: [MAPlayer] {
         guard let playerID = appState.selectedPlayerID else { return [] }
-        return appState.groupMembers(for: playerID, requireVolumeControl: false)
+        return appState.groupMembers(for: playerID, requireVolumeControl: false).sortedByName()
     }
 
     private var candidates: [MAPlayer] {
         guard let playerID = appState.selectedPlayerID else { return [] }
-        return appState.groupingCandidates(for: playerID)
+        return appState.groupingCandidates(for: playerID).sortedByName()
     }
 
     var body: some View {
